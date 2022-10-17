@@ -1,31 +1,34 @@
-
-##################################################
 #### PLANT COMMUNITY DATA CLEANING IN INCLINE ####
-##################################################
 
 #### Loading libraries ####
 library(tidyverse)
 library(dataDownloader)
 library(lubridate)
+library(osfr)
 
-#Flowering data
+#osf_auth(token = "personal excess token")
+
+#Communitydata
 get_file(node = "zhk3m",
-         file = "INCLINE_flowering_2021.csv",
-         path = "Raw_data",
-         remote_path = "RawData/Flowering")
+         file = "INCLINE_community_2018_2019_2021_2022_korrekturlest.csv",
+         path = "data",
+         remote_path = "RawData/Community")
 
-#Sibbaldia procumbens demography
+#Metadata
 get_file(node = "zhk3m",
-         file = "INCLINE_demography_Sib_pro.csv",
-         path = "Cleaned_demography",
-         remote_path = "Demography")
-
+         file = "INCLINE_metadata.csv",
+         path = "data",
+         remote_path = "RawData")
 
 
 #### Reading in data ####
 
 #Sibbaldia procumbens
-sib_pro_demography <- read.csv("Cleaned_demography/INCLINE_demography_Sib_pro.csv", header = TRUE, sep = ",", dec = ".") #first row is headers
+community_data <- read.csv("data\\INCLINE_community_2018_2019_2021_2022_korrekturlest.csv",
+                               sep = ";")
+meta_data <- read.csv("data\\INCLINE_metadata.csv", sep = ";")
 
-#Veronica alpina
-ver_alp_demography <- read.csv("Cleaned_demography/INCLINE_demography_Ver_alp.csv", header = TRUE, sep = ",", dec = ".") #first row is headers
+
+#### Cleaning data ####
+
+
