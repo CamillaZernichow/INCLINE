@@ -277,7 +277,8 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "jamne" & plotID == "Skj_7_1" & year == 2019, "Sel_sel", species))|>
   mutate(species = ifelse(species %in% c("Agr_cap", "Agr_mer_cf") & plotID == "Skj_7_2" & year %in% c(2019,2022), "Ant_odo", species))|>
   mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2019, 4, cover))|>
-  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2022, 4, cover))
+  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2022, 4, cover))|>
+  mutate(species = ifelse(species == "Car_cap" & plotID == "Skj_7_5" & year == 2021, "Car_big", species))
 
 #####Gudmeddalen#####
 
@@ -294,6 +295,8 @@ community_clean <- community_clean|>
   mutate(species = ifelse(species == "Leu_aut_cf" & plotID == "Gud_1_6", "Leo_aut", species))|>
   mutate(species = ifelse(species == "Car_fla" & plotID == "Gud_1_6" & year == 2019, "Car_big", species))|>
  # mutate(cover = ifelse(species == "Ave_fle" & plotID == "Gud_1_6" & year == 2021, 3,cover))|> Not sure why I converted this one
+  mutate(species = ifelse(species =="Ave_fle" & plotID == "Gud_1_6" & year == 2019 & subPlot %in% c(7,14,19,20,26,28,30,21,32), "Fes_rub", species))|> 
+  mutate(species = ifelse(species =="Ave_fle" & plotID == "Gud_1_6" & year == 2022 & subPlot %in% c(19,26), "Fes_rub", species))|> 
   mutate(species = ifelse(species == "Car_pil" & plotID == "Gud_2_2", "Car_pal", species))|>
   mutate(species = ifelse(species == "Rum_ace_cf" & plotID == "Gud_2_2", "Rum_ace", species))|>
   mutate(species = ifelse(species == "Vio_tri_cf" & plotID == "Gud_2_3", "Vio_tri", species))|>
@@ -314,6 +317,9 @@ community_clean <- community_clean|>
   mutate(species = ifelse(species == "Ver_alp_cf" & plotID == "Gud_3_5", "Unknown", species))|>
   mutate(cover = ifelse (species == "Ave_fle" & plotID == "Gud_3_5" & year == 2019,2,cover))|>
   mutate(species = ifelse(species == "Hie_sp" & plotID == "Gud_3_6", "Hie_alp", species))|>
+  mutate(species = ifelse(species == "Car_sp" & plotID == "Gud_3_6" & year == 2019, "Car_big", species))|>
+  mutate(species = ifelse(species == "Car_sp" & plotID == "Gud_3_6" & year == 2021 & subPlot %in% c(4,5,6,28,33), "Car_pil", species))|>
+  mutate(species = ifelse(species == "Car_sp" & plotID == "Gud_3_6" & year == 2021 & subPlot == 29, "Car_pil", species))|>
   mutate(species = ifelse(species == "Agr_cap_cf" & plotID == "Gud_4_1", "Agr_cap", species))|>
   mutate(species = ifelse(species == "Pot_ere_cf" & plotID == "Gud_4_1" & year == 2021, "Pot_ere", species))|>
   mutate(species = ifelse(species =="Car_big" & plotID == "Gud_4_1" & year == 2019, "Car_fla", species))|>
@@ -354,6 +360,7 @@ community_clean <- community_clean|>
   mutate(species = ifelse(species == "Ave_fle" & plotID == "Gud_6_1", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Hie_pil" & plotID == "Gud_6_1", "Sol_vir", species))|>
   mutate(species = ifelse(species == "Vio_bif" & plotID == "Gud_6_1", "Vio_pal", species))|>
+  mutate(cover = ifelse(species =="Vio_pal" & plotID == "Gud_6_1" & year == 2022, 3,cover))|>
   mutate(species = ifelse(species == "Car_fla_CF" & plotID == "Gud_6_3", "Car_fla", species))|>
   mutate(species = ifelse(species == "Vio_can_cf" & plotID == "Gud_6_3", "Vio_can", species))|>
   mutate(species = ifelse(species == "Ant_sp" & plotID == "Gud_6_4", "Ant_dio", species))|>
@@ -402,7 +409,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Car_big_cf" & plotID == "Lav_1_3", "Car_big", species))|>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Lav_1_3" & year == 2019, 1,cover))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_1_3", "Car_nor", species))|>
-  mutate(cover = ifelse(species == "Bis_viv" & plotID == "Lav_1_3" & year == 2021, 5,cover))|> #Sjekk turfmapper
+  mutate(cover = ifelse(species == "Bis_viv" & plotID == "Lav_1_3" & year == 2022, 4,cover))|>
   mutate(species = ifelse(species %in% c("Agr_cap_cf", "Agr_mer") & plotID == "Lav_1_4", "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID =="Lav_1_4" & year == 2021, 2,cover))|>
   mutate(species = ifelse(species == "Ant_odo_cf" & plotID == "Lav_1_4", "Ant_odo", species))|>
@@ -431,6 +438,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Car_pil" & plotID == "Lav_2_3", "Car_pal", species))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_2_3", "Car_nor", species))|>
   mutate(species = ifelse(species == "Poa_pra_cf" & plotID == "Lav_2_3", "Poa_pra", species))|>
+  mutate(species = ifelse(species %in% c("Ranunculus", "Ran_acr") & plotID == "Lav_2_3", "Ran_pyg", species))|>
   mutate(species = ifelse(species %in% c("Vac_myr", "Ver_alp_cf") & plotID == "Lav_2_3", "Ver_alp", species))|>
   mutate(cover = ifelse(species == "Ver_alp" & plotID == "Lav_2_3" & year == 2019, 3,cover))|>
   mutate(species = ifelse(species == "Agr_cap_cf" & plotID == "Lav_2_4", "Agr_cap", species))|>
@@ -479,6 +487,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Luz_spi" & plotID == "Lav_3_3", "Luz_mul", species))|>
   mutate(species = ifelse(species == "Agr_mer" & plotID == "Lav_3_4", "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Lav_3_4" & year == 2018, 2, cover))|>
+  mutate(species = ifelse(species %in% c("Car_sp","Car_vag", "Car_vag_CF") & plotID == "Lav_3_4","Car_big", species ))|>
   mutate(species = ifelse(species == "Fes_rub_kanskje_Ave_fle" & plotID == "Lav_3_5", "Ave_fle", species))|>
   mutate(cover = ifelse(species == "Ave_fle" & plotID == "Lav_3_5" & year == 2019, 7, cover))|>
   mutate(cover = ifelse(species == "Rum_ace" & plotID == "Lav_3_5" & year == 2019, 1, cover))|>
@@ -489,18 +498,22 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Car_nor" & plotID == "Lav_3_6" & year == 2021, 2, cover))|>
   mutate(species = ifelse(species =="Fes_viv" & plotID == "Lav_3_6", "Fes_ovi", species))|>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Lav_3_6" & year == 2021, 4, cover))|>
+  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_4_1", "Car_nor", species))|> # Må sjekkes nøye i 2023!!!
   mutate(species = ifelse(species == "Car_vag_CF" & plotID == "Lav_4_1", "Car_vag", species))|>
   mutate(species = ifelse(species == "Gen_cam_cf" & plotID == "Lav_4_1", "Gen_cam", species))|>
   mutate(species = ifelse(species == "Leu_aut_cf" & plotID == "Lav_4_1", "Leo_aut", species))|>
   mutate(species = ifelse(species == "Sal_sp" & plotID == "Lav_4_1", "Sal_lan", species))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_4_3","Car_nor",species))|>
+  mutate(species = ifelse(species =="Des_ces" & plotID == "Lav_4_2","Des_alp",species))|>
   mutate(species = ifelse(species == "Car_cap_cf" & plotID == "Lav_4_4", "Car_cap", species))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_4_4", "Car_nor", species))|>
   mutate(species = ifelse(species == "Car_cap_cf" & plotID == "Lav_4_5", "Car_cap", species))|>
   mutate(species = ifelse(species == "Fes_ovi" & plotID == "Lav_4_5", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Pyr_min" & plotID == "Lav_4_5", "Pyr_sp", species))|>
   mutate(species = ifelse(species == "Car_big_cf" & plotID == "Lav_5_2", "Car_big", species))|>
-  mutate(cover = ifelse(species == "Car_big" & plotID == "Lav_5_2"& year == 2021, 6, cover))|>
+  mutate(species = ifelse(species == "Car_pil_cf" & plotID == "Lav_5_2", "Car_big", species))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Lav_5_2"& year == 2021, 10, cover))|>
+  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_5_2", "Car_nor", species))|>
   mutate(species = ifelse(species %in% c("Car_nig_cf", "Car_nor_cf") & plotID == "Lav_5_3", "Car_nor",species))|>
   mutate(cover = ifelse(species == "Car_nor" & plotID == "Lav_5_3" & year == 2021,2,cover))|>
   mutate(cover = ifelse(species == "Car_nor" & plotID == "Lav_5_3" & year == 2022,1,cover))|>
@@ -529,8 +542,10 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_6_3", "Car_nor", species))|>
   mutate(species = ifelse(species == "Car_sp_den_lyse" & plotID == "Lav_6_3", "Car_sp", species))|>
   mutate(species = ifelse(species == "Car_sp_den_lyse" & plotID == "Lav_6_5", "Car_big", species))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Lav_6_5" & year == 2022, 7,cover))|>
   mutate(species = ifelse(species == "Jun_tri_CF" & plotID == "Lav_6_5", "Jun_tri", species))|>
   mutate(species = ifelse(species == "Phl_alp_cf" & plotID == "Lav_6_5", "Phl_alp", species))|>
+  mutate(cover = ifelse(species == "Alc_sp" & plotID == "Lav_6_5" & year == 2022, 1,cover))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_6_6", "Car_nor", species))|>
   mutate(species = ifelse(species == "Car_pil_cf" & plotID == "Lav_6_6", "Car_pil", species))|>
   mutate(species = ifelse(species == "Car_sp" & plotID == "Lav_7_1", "Car_nor", species))|>
@@ -623,11 +638,13 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Vio_bif" & plotID == "Ulv_4_1" & year == 2021, 5,cover))|>
   mutate(species = ifelse(species == "Car_big_cf" & plotID == "Ulv_4_3", "Car_big", species))|>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_4_3" & year == 2018, 17,cover))|>
-  mutate(species = ifelse(species == "Gen_sp" & plotID == "Ulv_4_3", "Gen_ama", species))|>
+  mutate(species = ifelse(species %in% c("Gen_sp", "Gen_ana") & plotID == "Ulv_4_3", "Gen_ama", species))|>
   mutate(species = ifelse(species == "Pot_ere" & plotID == "Ulv_4_3", "Pot_cra", species))|>
+  mutate(species = ifelse(species == "Poa_alp" & plotID == "Ulv_4_3", "Poa_pra", species))|>
   mutate(species = ifelse(species == "Car_pil_cf" & plotID == "Ulv_4_4", "Car_pil", species))|>
   mutate(species = ifelse(species == "Sib_pro_cf" & plotID == "Ulv_4_4", "Sib_pro", species))|>
   mutate(species = ifelse(species == "Vio_pal" & plotID == "Ulv_4_4", "Vio_bif", species))|>
+  mutate(cover = ifelse(species == "Vio_bif" & plotID == "Ulv_4_4" & year == 2022, 6,cover))|>
   mutate(species = ifelse(species == "Car_vag_CF" & plotID == "Ulv_5_1", "Car_vag", species))|>
   mutate(cover = ifelse(species == "Car_vag" & plotID == "Ulv_5_1" & year == 2021, 2, cover))|>
   mutate(species = ifelse(species %in% c("Unknown", "Eri_uni_cf") & plotID == "Ulv_5_1", "Eri_uni", species))|>
@@ -664,6 +681,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Leu_aut_cf" & plotID == "Ulv_6_5", "Leo_aut", species))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Ulv_6_5", "Car_nor", species))|>
   mutate(species = ifelse(species == "Agr_cap" & plotID == "Ulv_6_6", "Agr_mer", species))|>
+  mutate(cover = ifelse(species =="Agr_mer" & plotID == "Ulv_6_6" & year == 2022,16,cover))|>
   mutate(species = ifelse(species == "Car_sp_smal" & plotID == "Ulv_6_6", "Car_big", species))|>
   mutate(species = ifelse(species %in% c("Ave_fle", "Fes_rub_cf_kanskje_Ave_fle") & plotID == "Ulv_7_2", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Car_big_cf" & plotID == "Ulv_7_2", "Car_big", species))|>
@@ -685,7 +703,7 @@ community_env <- community_clean|>
   left_join(meta_data_env, by = "plotID")|>
   filter(!species == "Nid_seedling")|>
   filter(!species == "Unknown")|>
-  filter(year == 2021)
+  filter(year == 2022)
 
 community_env <- community_env|>
   select(plotID, species, cover)|>
