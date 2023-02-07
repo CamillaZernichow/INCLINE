@@ -167,7 +167,8 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Skj_2_2" & year == 2018, 6, cover))|>
   mutate(species = ifelse(species == "Gen_sp" & plotID == "Skj_2_2" & year == 2018, "Gen_niv", species)) |>
   mutate(species = ifelse(species == "Ran_acr_cf" & plotID == "Skj_2_2" & year == 2022, "Ran_acr", species))|>
-  mutate(species = ifelse(species == "Epi_ana_cf" & plotID == "Skj_2_3", "Epi_ana", species))|> #Sjekk om overlapp
+  mutate(species = ifelse(species == "Epi_ana_cf" & plotID == "Skj_2_3", "Epi_ana", species))|> 
+  mutate(cover = ifelse(species == "Epi_ana" & plotID == "Skj_2_3" & year == 2018,1,cover))|>
   mutate(species = ifelse(species == "Alc_sp_cf" & plotID == "Skj_2_5" & year == 2022, "Alc_sp", species)) |>
   mutate(species = ifelse(species == "Cer_cer_cf" & plotID == "Skj_2_5" & year == 2018, "Cer_cer", species)) |>
   mutate(species = ifelse(species %in% c("Epi_ana_cf", "Epilobium_sp") & plotID == "Skj_2_5" & year %in% c(2018,2022), "Epi_ana", species)) |>
@@ -192,6 +193,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species %in% c("Ach_mil", "Agr_cap_cf") & plotID == "Skj_3_3", "Agr_cap", species))|> 
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_3_3" & year == 2018, 3, cover))|>
   mutate(species = ifelse(species == "Arc_urv" & plotID == "Skj_3_3" & year == 2022, "Bis_viv", species))|>
+  mutate(cover = ifelse(species == "Bis_viv" & plotID == "Skj_3_3" & year == 2022, 10, cover))|>
   mutate(species = ifelse(species == "Car_pal" & plotID == "Skj_3_3" & year == 2019, "Car_pil", species))|>
   mutate(species = ifelse(species == "Gen_cam_cf" & plotID == "Skj_3_3" & year == 2021, "Gen_niv", species))|>
   mutate(species = ifelse(species == "Luz_spi" & plotID == "Skj_3_3" & year == 2019, "Luz_mul", species))|>
@@ -224,7 +226,8 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Rum_acl" & plotID == "Skj_4_4" & year == 2019, "Rum_ace", species)) |>
   mutate(species= ifelse(species == "Car_big_cf" & plotID == "Skj_4_5" & year == 2018, "Car_big", species)) |> 
   mutate(cover = ifelse(species == "Car_big" & plotID == "Skj_4_5" & year == 2018, 2, cover))|>
-  mutate(species = ifelse(species == "Car_sp" & plotID == "Skj_4_5" & year == 2019, "Car_cap", species)) |> #Slå sammen Car_cap og Car_sp <- Heller litt mot å slå til Car_cap? #Ingen ting å fixe cover med
+  mutate(species = ifelse(species == "Car_sp" & plotID == "Skj_4_5" & year == 2019, "Car_cap", species)) |> 
+  mutate(cover = ifelse(species == "Car_cap" & plotID == "Skj_4_5" & year == 2018,1,cover))|>
   mutate(species = ifelse(species == "Oma_sp" & plotID == "Skj_4_5" & year == 2019, "Oma_sup", species)) |>
   mutate(cover = ifelse(species == "Oma_sup" & plotID == "Skj_4_5" & year == 2018, 3, cover))|>
   mutate(cover = ifelse(species == "Cam_rot" & plotID == "Skj_4_5" & year == 2018, 1, cover))|>
@@ -269,6 +272,7 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Skj_6_4" & year == 2021, 1, cover))|>
   mutate(species = ifelse(species == "Car_vag_CF" & plotID == "Skj_6_6" & year == 2018, "Car_vag", species))|> 
   mutate(species = ifelse(species == "Sel_sp" & plotID == "Skj_6_6" & year == 2019, "Sel_sel", species))|>
+  mutate(cover = ifelse(species == "Sel_sel" & plotID == "Skj_6_6" & year == 2019,1,cover))|>
   mutate(cover = ifelse(species == "Leo_aut" & plotID == "Skj_6_6" & year == 2019, 3, cover))|>
   mutate(species = ifelse(species == "Car_lep" & plotID == "Skj_7_1" & year == 2021, "Car_big", species))|>
   mutate(species = ifelse(species == "Car_cap_cf" & plotID == "Skj_7_1" & year == 2019, "Car_cap", species))|>
@@ -278,6 +282,7 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Cer_fon" & plotID == "Skj_7_1" & year == 2019, 1, cover))|>
   mutate(species = ifelse(species == "Jun_tri" & plotID == "Skj_7_1" & year == 2019, "Ave_fle", species))|>
   mutate(species = ifelse(species == "jamne" & plotID == "Skj_7_1" & year == 2019, "Sel_sel", species))|>
+  mutate(cover = ifelse(species == "Sel_sel" & plotID == "Skj_7_1" & year == 2019,3,cover))|>
   mutate(species = ifelse(species %in% c("Agr_cap", "Agr_mer_CF") & plotID == "Skj_7_2" & year %in% c(2019,2022), "Ant_odo", species))|>
   mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2019, 4, cover))|>
   mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2022, 4, cover))|>
@@ -318,7 +323,7 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(species == "Ran_acr" & plotID == "Gud_3_3" & year == 2019, 2, cover))|>
   mutate(cover = ifelse(species == "Ver_alp" & plotID == "Gud_3_3" & year == 2021, 3, cover))|>
   mutate(species = ifelse(species == "Vio_pal" & plotID == "Gud_3_3", "Vio_bif", species))|>
-  mutate(cover = ifelse(species == "Vio_bif" & plotID == "Gud_3_3" & year == 2019, 11, cover))
+  mutate(cover = ifelse(species == "Vio_bif" & plotID == "Gud_3_3" & year == 2019, 11, cover))|>
   mutate(species = ifelse(species == "Hie_sp" & plotID == "Gud_3_5", "Hie_alp", species)) |>
   mutate(species = ifelse(species == "Ver_alp_cf" & plotID == "Gud_3_5", "Unknown", species))|>
   mutate(cover = ifelse (species == "Ave_fle" & plotID == "Gud_3_5" & year == 2019,2,cover))|>
@@ -366,17 +371,21 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(species == "Pot_ere" & plotID == "Gud_5_5" & year == 2019, 9, cover))|>
   mutate(species = ifelse(species %in% c("Pyr_sp", "Pyr_sp_cf") & plotID == "Gud_5_5", "Pyr_min", species))|>
   mutate(species = ifelse(species == "Dip_alp" & plotID == "Gud_5_5", "Hyp_sel", species))|>
-  mutate(species = ifelse(species == "Ave_fle_cf" & plotID == "Gud_5_6", "Ave_fle", species))|> #Sjekk overlapp 
+  mutate(species = ifelse(species == "Ave_fle_cf" & plotID == "Gud_5_6", "Ave_fle", species))|> 
+  mutate(cover = ifelse(species == "Ave_fle" & plotID == "Gud_5_6" & year == 2018,5,cover))|>
   mutate(species = ifelse(species == "Ave_fle" & plotID == "Gud_6_1", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Hie_pil" & plotID == "Gud_6_1", "Sol_vir", species))|>
   mutate(species = ifelse(species == "Vio_bif" & plotID == "Gud_6_1", "Vio_pal", species))|>
   mutate(cover = ifelse(species =="Vio_pal" & plotID == "Gud_6_1" & year == 2022, 3,cover))|>
+  mutate(species = ifelse(species == "Pyr_sp_IKKE_rotundifolia" & plotID == "Gud_6_2", "Pyr_sp",species))|>
   mutate(species = ifelse(species == "Car_fla_CF" & plotID == "Gud_6_3", "Car_fla", species))|>
   mutate(species = ifelse(species == "Vio_can_cf" & plotID == "Gud_6_3", "Vio_can", species))|>
+  mutate(cover = ifelse(species == "Sil_aca" & plotID == "Gud_6_3" & year == 2019,1,cover))|>
   mutate(species = ifelse(species == "Ant_sp" & plotID == "Gud_6_4", "Ant_dio", species))|>
   mutate(species = ifelse(species == "Ant_sp" & plotID == "Gud_6_6", "Ant_dio", species))|>
   mutate(species = ifelse(species == "Hie_pil_cf" & plotID == "Gud_6_6", "Hie_pil", species))|>
   mutate(species = ifelse(species %in% c("Car_big_cf", "Car_sp") & plotID == "Gud_7_1", "Car_big", species))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Gud_7_1" & year == 2018,3,cover))|>
   mutate(species = ifelse(species == "Car_pal_cf" & plotID == "Gud_7_1", "Car_pal", species ))|>
   mutate(cover = ifelse(species == "Eup_wet" & plotID == "Gud_7_1" & year == 2019, 5, cover))|>
   mutate(species = ifelse(species == "Car_big_cf" & plotID == "Gud_7_2", "Car_big", species))|>
@@ -392,6 +401,7 @@ community_clean <- community_clean|>
   mutate(species = ifelse(species == "Car_pil_cf" & plotID == "Gud_7_4","Car_pal", species))|>
   mutate(cover = ifelse(species == "Car_vag" & plotID == "Gud_7_4" & year == 2019, 1, cover))|>
   mutate(species = ifelse(species == "Pyr_sp_IKKE_rotundifolia" & plotID == "Gud_7_4", "Pyr_sp",species))|>
+  mutate(cover = ifelse(species == "Ran_acr" & plotID == "Gud_7_4" & year == 2018 & is.na(cover),0,cover))|>
   mutate(species = ifelse(species == "Alc_sp_cf" & plotID == "Gud_7_6", "Agr_cap", species))|>
   mutate(cover = ifelse(species =="Agr_cap" & plotID == "Gud_7_6" & year == 2019, 7, cover))|>
   mutate(species = ifelse(species %in% c("Fes_rub","Fes_rub_cf_kanskje_Ave_fle") & plotID == "Gud_7_6" & year %in% c(2018, 2019), "Fes_rub", species))|>
@@ -399,7 +409,8 @@ community_clean <- community_clean|>
   mutate(species = ifelse(species == "Leo_sp" & plotID == "Gud_7_6", "Leo_aut", species))|>
   mutate(species = ifelse(species == "Car_cap_cf" & plotID == "Gud_7_6", "Car_cap", species))|>
   mutate(cover = ifelse(species == "Car_cap" & plotID == "Gud_7_6" & year %in% c(2021,2022),1 ,cover))|>
-  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Gud_7_6" & year == 2019, 6, cover))
+  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Gud_7_6" & year == 2019, 6, cover))|>
+  mutate(cover = ifelse(species == "Tar_sp" & plotID == "Gud_7_6" & year == 2019, 1,cover))
 
 #####Lavisdalen#####
 
@@ -415,6 +426,7 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Poa_pra" & plotID == "Lav_1_1" & year == 2019, 1,cover))|>
   mutate(species = ifelse(species == "Agr_cap_cf" & plotID == "Lav_1_2", "Agr_cap", species))|>
   mutate(species = ifelse(species == "Cer_cer_cf" & plotID == "Lav_1_2", "Cer_cer", species))|>
+  mutate(cover = ifelse(species == "Cer_fon" & plotID == "Lav_1_2" & year == 2018,1,cover))|>
   mutate(cover = ifelse(species == "Cer_cer" & plotID == "Lav_1_2" & year == 2019, 4,cover))|>
   mutate(species = ifelse(species == "Epi_ana_cf" & plotID == "Lav_1_2", "Epi_ana", species))|>
   mutate(cover = ifelse(species == "Epi_ana" & plotID == "Lav_1_2" & year == 2019, 2,cover))|>
@@ -442,12 +454,12 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Poa_pra" & plotID == "Lav_1_4" & year == 2019, 2,cover))|>
   mutate(species = ifelse(species %in% c("Agr_cap_cf", "Agr_mer") & plotID == "Lav_1_6", "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID =="Lav_1_6" & year == 2021, 2,cover))|>
-  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_1_6", "Car_nor", species))|> #Sjekk overlapp
-  mutate(species = ifelse(species == "Cer_cer_cf" & plotID == "Lav_1_6", "Cer_cer", species))|> #Sjekk overlapp
+  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_1_6", "Car_nor", species))|> 
+  mutate(species = ifelse(species == "Cer_cer_cf" & plotID == "Lav_1_6", "Cer_cer", species))|> 
   mutate(species = ifelse(species == "Cer_alp" & plotID =="Lav_1_6", "Cer_fon",species))|>
   mutate(species = ifelse(species == "Fes_ovi_cf" & plotID =="Lav_1_6", "Fes_ovi",species))|>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Lav_1_6" & year == 2019, 1,cover))|>
-  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_2_1", "Car_nor", species))|> #Sjekk overlapp
+  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_2_1", "Car_nor", species))|> 
   mutate(species = ifelse(species %in% c("Agr_cap_cf", "Agr_mer") & plotID == "Lav_2_2", "Agr_cap", species))|>
   mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_2_2", "Car_nor", species))|>
   mutate(cover = ifelse(species == "Car_nor" & plotID == "Lav_2_2",2, cover))|>
@@ -482,7 +494,8 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Poa_alp" & plotID == "Lav_2_5" & year == 2019,2,cover))|>
   mutate(cover = ifelse(species == "Vio_bif" & plotID == "Lav_2_5" & year == 2021, 5,cover))|>
   mutate(species = ifelse(species == "Pyr_sp" & plotID == "Lav_2_5", "Pyr_min", species))|>
-  mutate(species = ifelse (species == "Ver_alp_cf" & plotID == "Lav_2_5", "Ver_alp", species))|> #Undersøk om den dekker over andre
+  mutate(species = ifelse (species == "Ver_alp_cf" & plotID == "Lav_2_5", "Ver_alp", species))|> 
+  mutate(cover = ifelse(species == "Ver_alp" & plotID == "Lav_2_5" & year == 2019,2,cover))|>
   mutate(species = ifelse(species == "Oma_sp" & plotID == "Lav_2_6", "Oma_sup", species))|>
   mutate(species = ifelse(species == "Pyr_sp" & plotID == "Lav_2_6", "Pyr_min", species))|>
   mutate(species = ifelse(species == "Ran_acr_cf" & plotID == "Lav_2_6", "Ran_acr", species))|>
@@ -637,16 +650,19 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Phl_alp" & plotID == "Ulv_2_4" & year == 2019, 2,cover))|>
   mutate(species = ifelse(species == "Sib_pro_cf" & plotID == "Ulv_2_4", "Sib_pro", species))|>
   mutate(cover = ifelse(species == "Leo_aut" & plotID == "Ulv_2_4" & year == 2018, 1,cover))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_2_4" & year == 2022,3,cover))|>
   mutate(species = ifelse(species == "Alc_sp_cf" & plotID == "Ulv_2_5", "Alc_sp", species))|>
   mutate(species = ifelse(species == "Car_cap_cf" & plotID == "Ulv_2_5", "Car_cap", species))|>
   mutate(species = ifelse(species == "Leu_aut_cf" & plotID == "Ulv_2_5", "Leo_aut", species))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_2_5" & year == 2022,2, cover))|>
   mutate(species = ifelse(species %in% c("Lyc_sp", "Sel_sp") & plotID == "Ulv_2_5", "Sel_sel", species))|>
   mutate(species = ifelse(species == "Ver_cha" & plotID == "Ulv_2_5", "Ver_alp", species))|>
   mutate(cover = ifelse(species == "Ver_alp" & plotID == "Ulv_2_5" & year == 2019, 2, cover))|>
   mutate(cover = ifelse(species == "Sib_pro" & plotID == "Ulv_2_5" & year == 2019, 5,cover))|>
   mutate(cover = ifelse(species =="Alc_sp" & plotID == "Ulv_2_5" & year == 2021, 30, cover))|>
-  mutate(species = ifelse(species == "Epi_ana_cf" & plotID == "Ulv_3_1", "Epi_ana", species))|> #Sjekk om overlapp
-  mutate(species = ifelse(species == "Car_big_cf" & plotID == "Ulv_3_1", "Car_big", species))|> #Sjekk om overlapp
+  mutate(species = ifelse(species == "Epi_ana_cf" & plotID == "Ulv_3_1", "Epi_ana", species))|> 
+  mutate(species = ifelse(species == "Car_big_cf" & plotID == "Ulv_3_1", "Car_big", species))|> 
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_3_1" & year == 2018,4,cover))|>
   mutate(species = ifelse(species == "Agr_mer" & plotID == "Ulv_3_2", "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Ulv_3_2" & year == 2019, 14, cover))|>
   mutate(species = ifelse(species == "Alc_sp_cf" & plotID == "Ulv_3_2", "Alc_sp", species))|>
@@ -728,15 +744,39 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species %in% c("Ave_fle", "Fes_rub_cf_kanskje_Ave_fle") & plotID == "Ulv_7_3", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Alc_sp" & plotID == "Ulv_7_3", "Alc_alp", species))|>
   mutate(species = ifelse(species == "Hyp_mac" & plotID == "Ulv_7_3", "Hyp_sp", species))|>
-  mutate(cover = ifelse(species == "Ver_off" & plotID == "Ulv_7_3" & year == 2019 & is.na(cover),0, cover))|>
+  mutate(cover = ifelse(species == "Ver_off" & plotID == "Ulv_7_2" & year == 2019 & is.na(cover),0, cover))|>
+  mutate(cover = ifelse(species =="Vio_can" & plotID == "Ulv_7_2" & year == 2019, 1, cover))|>
   mutate(species = ifelse(species %in% c("Ave_fle", "Fes_rub_cf_kanskje_Ave_fle", "Fes_ovi") & plotID == "Ulv_7_4", "Fes_rub", species))|>
   mutate(species = ifelse(species == "Sil_aca_cf" & plotID == "Ulv_7_4", "Sil_aca", species))|>
   mutate(cover = ifelse(species == "Tha_alp" & plotID == "Ulv_7_4" & year == 2019, 1, cover))|>
   mutate(cover = ifelse(species == "Ach_mil" & plotID == "Ulv_7_4" & year == 2019 & is.na(cover),0, cover))
 
-#Uses the lines under to find the mean. Easier to find falses in the sheet
 
-#remove NA
-repna
+####Ulv_7_3 2018####
+#The Ulv_7_3 2018 plot lacks cover. To use the data, we have decided to give it approximatly the same cover as the year after
 
-
+community_clean <- community_clean|>
+  mutate(cover = ifelse(species == "Agr_cap" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Alc_alp" & plotID == "Ulv_7_3" & year == 2018, 10, cover))|>
+  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Ulv_7_3" & year == 2018, 3, cover))|>
+  mutate(cover = ifelse(species == "Ave_fle" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Bis_viv" & plotID == "Ulv_7_3" & year == 2018, 15, cover))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_7_3" & year == 2018,4 , cover))|>
+  mutate(cover = ifelse(species == "Car_pal" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
+  mutate(cover = ifelse(species == "Cer_fon" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Des_ces" & plotID == "Ulv_7_3" & year == 2018, 6, cover))|>
+  mutate(cover = ifelse(species == "Eup_wet" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|> #Sjekk om heter Eup_wet
+  mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Fes_rub" & plotID == "Ulv_7_3" & year == 2018 & is.na(cover), 0, cover))|>
+  mutate(cover = ifelse(species == "Leo_aut" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
+  mutate(cover = ifelse(species == "Luz_mul" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Phl_alp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Pyr_sp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|> #Sjekk om riktig navn
+  mutate(cover = ifelse(species == "Ran_acr" & plotID == "Ulv_7_3" & year == 2018, 9, cover))|>
+  mutate(cover = ifelse(species == "Sal_her" & plotID == "Ulv_7_3" & year == 2018, 5, cover))|>
+  mutate(cover = ifelse(species == "Sel_sel" & plotID == "Ulv_7_3" & year == 2018, 3, cover))|>
+  mutate(cover = ifelse(species == "Sib_pro" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Tar_sp" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
+  mutate(cover = ifelse(species == "Ver_alp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
+  mutate(cover = ifelse(species == "Vio_bif" & plotID == "Ulv_7_3" & year == 2018, 15, cover))|>
+  mutate(cover = ifelse(species == "Vio_pal" & plotID == "Ulv_7_3" & year == 2018, 1, cover))
