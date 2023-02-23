@@ -5,10 +5,14 @@ library(osfr)
 library(pipebind)
 library(tidyverse)
 library(lubridate)
-library(turfmapper)
+#library(turfmapper)
 library(dataDownloader)
 library(dplyr)
-library("vegan")
+library(vegan)
+library(ggvegan)
+library(gridExtra)
+library(here)
+
 
 #osf_auth(token = "")#Your personal OSF token
 
@@ -27,7 +31,7 @@ get_file(node = "zhk3m",
 
 ##### Reading in data #####
 #Community data
-community_data_download <- read_delim("data\\INCLINE_community_2018_2019_2021_2022_korrekturlest.csv", col_types = cols(.default = col_character()))
+community_data_download <- read_delim (file = here("data\\INCLINE_community_2018_2019_2021_2022_korrekturlest.csv", col_types = cols(.default = col_character())))
 #Meta data
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv")
 
@@ -38,9 +42,9 @@ meta_data_download <- read_delim("data\\INCLINE_metadata.csv")
 
 #community data
 community_data <- community_data_download |>
-  rename(Cer_sag_cf = "Cer/sag_cf", Cer_sp = "Cer _sp", Fes_sp = Fes.sp., Vac_myr_cf = Var_myr_cf, Nid_seedling = "Nid seedling", block = Block, measure = Measure, site = Site, treatment = Treatment, weather = Weather)|> #Changed wrong types and capital letters to small letters. 
-  mutate(plotID = paste0(substr(site, 1,3), "_", block, "_", plot))|>#Making a new column called plotID
-  select(-treatment,-...226)#Removing unnecessary columns
+  rename(Cer_sag_cf = "Cer/sag_cf", Cer_sp = "Cer _sp", Fes_sp = Fes.sp., Vac_myr_cf = Var_myr_cf, Nid_seedling = "Nid seedling", block = Block, measure = Measure, site = Site, treatment = Treatment, weather = Weather, vegetation_cover = Veg_cover, vegetation_height_mm = Veg_height_mm, moss_depth_mm = Moss_depth_mm)|> #Changed wrong types and capital letters to small letters. 
+  mutate(plotID = paste0(substr(site, 1,3), "_", block, "_", plot))|> #Making a new column called plotID
+  select(-treatment,-...226) #Removing unnecessary columns
 
 #meta data
 meta_data <- meta_data_download|>
@@ -50,7 +54,8 @@ meta_data <- meta_data_download|>
 # The first year the data was collected, we didn't register the treatment. Therefor by combining the community data and meta data, we will get the missing information. We are also putting in plotID as a new variable that is easier to work with than separated block and plot information. 
 
 community_data <- community_data |>
-  left_join(meta_data, by = "plotID")
+  left_join(meta_data, by = "plotID") |>
+  rename(warming = OTC)
 
 
 ##### Turfmapper #####
@@ -58,7 +63,7 @@ community_data <- community_data |>
 
 #Making data ready for turfmapper by widening the data
 community_data_longer <- community_data |>
-  pivot_longer(Ach_mil:Nid_seedling,values_drop_na = TRUE)|>
+  pivot_longer(Ach_mil:Nid_seedling, values_drop_na = TRUE)|> #Check which species is the first and the last and use these instead of Ach_mil and Nid_seedling.
   rename(species = name)
 
 #Making new variables were different signs in the dataset gives the same value based on which category it goes under. 
@@ -70,40 +75,40 @@ community_data_longer <- community_data_longer |>
     juvenile = str_detect(value, "(?i)[j]"),
     seedling = str_detect(value, "(?i)[s]")
   )|>
-  mutate(dominance = case_when(dominance == "TRUE" ~ value)) |>
+  mutate(dominance = case_when(dominance == "TRUE" ~ value)) |> #In theory Sibbaldia procumbens (Sib_pro) and Veronica alpina (Ver_alp) should have registered dominance in all plots at Skjellingahaugen every year. Which means that 1 = 0-25% cover in the subplot, 2 = 25-50%, 3 = 50-75% and 4 = 75-100%. So with this coding we are missing out on the 0-25% information for those species. However, the problem is that I can't be sure if people usde 1 as a dominance or a cover value. For plots where there are 2, 3 and 4s we know that 1s means dominance. Could be coded in somehow.
   mutate(presence = case_when(presence == "TRUE" ~ 1)) 
 
 #Making a new variable called cover
 cover_column <- community_data_longer|>
   filter(measure == "cover" )|>
-  select(block, plot, site, year, species, value) |>
+  select(block, plot, site, plotID, year, species, value) |>
   rename(cover = value)|>
   filter(!cover == "")|>
   filter(!cover == " ")|>
   mutate(cover = ifelse(cover == 0.1, 1, cover))|>
   mutate(cover = ifelse(cover == 0.5, 1, cover))|>
-  mutate(cover = ifelse(cover == 0 & species == "Hyp_mac" & site == "Ulvehaugen" & year == 2019 & block == 7 & plot == 3, 1, cover))
-
-#Combining the new column "cover" and the elongated community data
-community_data_longer <-  community_data_longer |>
-  left_join(cover_column, by = c("plot", "block", "site", "year", "species"))|>
-  mutate(subPlot = case_when(year == 2022 & subPlot == 9 ~ "whole_plot",
-                             TRUE ~ subPlot)) |> #For using in turmapper, "whole_plot" needs to be a number from 1-35. Easiest when using 1.
-  mutate(measure = case_when(year == 2022 & subPlot == 9 ~ "plot",
-                             TRUE ~ measure)) |>
-  filter(subPlot != "cover")|>
-  filter(subPlot != "plot")|>
+  mutate(cover = ifelse(cover == 0 & species == "Hyp_mac" & site == "Ulvehaugen" & year == 2019 & block == 7 & plot == 3, 1, cover)) |>
   mutate(cover = as.integer(cover))
 
-#Removing unnecessary tables
-rm(cover_column)
+#Combining the new column "cover" and the elongated community data. Dataset with presence absence data.
+community_clean <-  community_data_longer |>
+  left_join(cover_column, by = c("plot", "block", "site", "plotID", "year", "species"))|>
+  mutate(measure = case_when(year == 2022 & subPlot == 9 ~ "plot",
+                             TRUE ~ measure)) |>
+  filter(subPlot != "cover")
+
+# To get the data ready for turfmapper the whole plot information "plot" in "measure" needs to be recoded to have the value 1 in the measure column. "plot" also needs to be filtered out in the subPlot column. This is done in seperate code.
+
+#################################################################################
+######     Turf mapper process happens here, see script for the code       ######
+#################################################################################
 
 
 
-#### Cleaning mistakes from dataset ####
+#### Cleaning mistakes from dataset based on turfmapper evaluation ####
 #Several typing mistakes occurred when making the dataset. Therefor, we standardise again the rest of typing mistakes for the different species so its easier to work on when cleaning the data.
 #General coding for all plots
-community_clean <- community_data_longer |>
+community_clean <- community_clean |>
   mutate(species = ifelse(species == "Tri_eur", "Lys_eur", species))|>
   mutate(species = ifelse (species == "Antennaria_sp", "Ant_sp", species))|>
   mutate(species = ifelse (species == "Epilobium_sp", "Epi_sp", species))|>
@@ -115,12 +120,15 @@ community_clean <- community_data_longer |>
   mutate(species = ifelse(species == "Hup_sel", "Hyp_sel", species))|>
   mutate(species = ifelse(species == "Gen_ana", "Gen_ama", species))|>
   mutate(species = ifelse(species == "Lyc_lyc", "Sel_sel", species))
-#Renamed Tri_eur to Lys_eur, Antenoria_sp to Ant_sp, Eup_sp and Eup_str to Eup_wet, and Vio_riv to Vio Can, Emp_her to Emp_nig, Hup_sel to Hyp_sel, Gen_ana to Gen_ama. Also shortened the long species names to the same standard as the other.
+#A couple of reason for renaming here. 1) misspellings or several names in the dataset that we combine to the name we want to use (Ant_sp, Epi_sp, Jun_sp, Ran_sp, Hyp_sel, Gen_ama), 2) species that some recorders missidentify (Eup_wet, Vio_can, Emp_nig, Sel_sel), 3) Old taxnomoix names that not everyone has caught up on (Lys_eur).
 
-#Codes for each specific change in each plot#
-#Using two different codes with different variants of the two codes:
+#Plot and year specific changes based on evaluation from turfmapper#
+#Following are changes to the dataset that can be grouped into two main ways of changing the data. 
+#First merging information of two species together if we are confident that it is actually another species, or after analysing the turfmapper we can confirm that it is actually a specific species instead of just the genus that we wrote in the field (for example: Car_sp --> Car_big). 
 
 # - mutate(species = ifelse(species == "the variable" & plotID == "the name of the plot", "the new name", species)) #The main code that rename and merges the information from two columns together in one. 
+
+#Second this code adjusts the cover of a specific species in a specific plot in a specific year. Sometimes we needed to adjust the cover in the changes made above (when we merged species) and add up the cover of the two species that were merged. Other times this species, plot, year combination lacked a cover and this needed to be imputed by taking the average of the cover of this speices in that plot the year before and/or the year after.
 
 # - mutate(cover = ifelse(species == "the variable" & plotID == "the name of the plot" & year == the year(s) you want the cover to apply for, the new cover, cover)) #You can also change "species" before "ifelse", and after "the new name" to change the cover for the plot. Here you need "year ==" to specify which year you want to change, if not, all covers for all year for the specific specie will be the same.
 
@@ -130,10 +138,10 @@ community_clean <- community_data_longer |>
 
 #####Skjellingahaugen#####
 
-community_clean <- community_clean |>
+community_clean <- community_clean |> #Legg inn at vi må dobbelstjekke agr_mer og agr_cap i felt 2023.
   mutate(species = ifelse(species == "Agr_mer" & plotID == "Skj_1_1" & year %in% c(2018, 2021), "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_1_1" & year == 2018, 4, cover))|>
-  mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_1_1" & year == 2021,5, cover ))|>
+  mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_1_1" & year == 2021, 5, cover ))|>
   mutate(species = ifelse(species %in% c("Car_big_cf", "Car_sp") & plotID == "Skj_1_1" & year %in% c(2021, 2022), "Car_big", species))|>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Skj_1_1" & year == 2021, 2, cover), cover = ifelse(species == "Car_big" & plotID == "Skj_1_1" & year == 2022,6, cover ))|>
   mutate(species = ifelse(species == "Fes_rub_cf_kanskje_Ave_fle" & plotID == "Skj_1_1", "Fes_rub", species))|>
@@ -540,7 +548,7 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Car_nor" & plotID == "Lav_3_6" & year == 2021, 2, cover))|>
   mutate(species = ifelse(species =="Fes_viv" & plotID == "Lav_3_6", "Fes_ovi", species))|>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Lav_3_6" & year == 2021, 4, cover))|>
-  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_4_1", "Car_nor", species))|> # Må sjekkes nøye i 2023!!!
+  mutate(species = ifelse(species == "Car_nor_cf" & plotID == "Lav_4_1", "Car_nor", species))|> # MC% sjekkes nC8ye i 2023!!!
   mutate(species = ifelse(species == "Car_vag_CF" & plotID == "Lav_4_1", "Car_vag", species))|>
   mutate(species = ifelse(species == "Gen_cam_cf" & plotID == "Lav_4_1", "Gen_cam", species))|>
   mutate(species = ifelse(species == "Leu_aut_cf" & plotID == "Lav_4_1", "Leo_aut", species))|>
@@ -755,28 +763,17 @@ community_clean <- community_clean |>
 ####Ulv_7_3 2018####
 #The Ulv_7_3 2018 plot lacks cover. To use the data, we have decided to give it approximatly the same cover as the year after
 
+#Making a dataset with the 2019 coverdata for the species in Ulv_7_3
+Ulv_7_3_2019 <- community_clean|>
+  filter(plotID == "Ulv_7_3") |>
+  filter(year == 2019) |>
+  select(species, cover, plotID)|>
+  mutate(year = "2018")|>
+  unique()|>
+  rename(imputed_cover = cover)
+
 community_clean <- community_clean|>
-  mutate(cover = ifelse(species == "Agr_cap" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Alc_alp" & plotID == "Ulv_7_3" & year == 2018, 10, cover))|>
-  mutate(cover = ifelse(species == "Ant_odo" & plotID == "Ulv_7_3" & year == 2018, 3, cover))|>
-  mutate(cover = ifelse(species == "Ave_fle" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Bis_viv" & plotID == "Ulv_7_3" & year == 2018, 15, cover))|>
-  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_7_3" & year == 2018,4 , cover))|>
-  mutate(cover = ifelse(species == "Car_pal" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
-  mutate(cover = ifelse(species == "Cer_fon" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Des_ces" & plotID == "Ulv_7_3" & year == 2018, 6, cover))|>
-  mutate(cover = ifelse(species == "Eup_wet" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|> #Sjekk om heter Eup_wet
-  mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Fes_rub" & plotID == "Ulv_7_3" & year == 2018 & is.na(cover), 0, cover))|>
-  mutate(cover = ifelse(species == "Leo_aut" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
-  mutate(cover = ifelse(species == "Luz_mul" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Phl_alp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Pyr_sp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|> #Sjekk om riktig navn
-  mutate(cover = ifelse(species == "Ran_acr" & plotID == "Ulv_7_3" & year == 2018, 9, cover))|>
-  mutate(cover = ifelse(species == "Sal_her" & plotID == "Ulv_7_3" & year == 2018, 5, cover))|>
-  mutate(cover = ifelse(species == "Sel_sel" & plotID == "Ulv_7_3" & year == 2018, 3, cover))|>
-  mutate(cover = ifelse(species == "Sib_pro" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Tar_sp" & plotID == "Ulv_7_3" & year == 2018, 2, cover))|>
-  mutate(cover = ifelse(species == "Ver_alp" & plotID == "Ulv_7_3" & year == 2018, 1, cover))|>
-  mutate(cover = ifelse(species == "Vio_bif" & plotID == "Ulv_7_3" & year == 2018, 15, cover))|>
-  mutate(cover = ifelse(species == "Vio_pal" & plotID == "Ulv_7_3" & year == 2018, 1, cover))
+  left_join(Ulv_7_3_2019, by = c("species", "plotID", "year")) |>
+  mutate(cover = ifelse(plotID == "Ulv_7_3" & year == 2018, imputed_cover, cover)) |> #Using coverdata from 2019
+  select(-imputed_cover) |>
+  mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover)) #Fes_ovi did not have a cover in 2019, it was only present in one subplot therefore it gets a 1 in cover.
