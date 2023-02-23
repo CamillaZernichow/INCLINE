@@ -44,8 +44,36 @@ meta_data_download <- read_delim("data\\INCLINE_metadata.csv")
 community_data <- community_data_download |>
   rename(Cer_sag_cf = "Cer/sag_cf", Cer_sp = "Cer _sp", Fes_sp = Fes.sp., Vac_myr_cf = Var_myr_cf, Nid_seedling = "Nid seedling", block = Block, measure = Measure, site = Site, treatment = Treatment, weather = Weather, vegetation_cover = Veg_cover, vegetation_height_mm = Veg_height_mm, moss_depth_mm = Moss_depth_mm)|> #Changed wrong types and capital letters to small letters. 
   mutate(plotID = paste0(substr(site, 1,3), "_", block, "_", plot))|> #Making a new column called plotID
-  select(-treatment,-...226) #Removing unnecessary columns
-
+  select(-treatment,-...226)|> #Removing unnecessary columns
+  mutate(block = as.numeric(block, na.rm = TRUE))|>
+  mutate(plot = as.numeric(plot, na.rm = TRUE))|>
+  mutate(year = as.numeric(year, na.rm = TRUE))|>
+  mutate(moss = as.numeric(moss, na.rm = TRUE))|>
+  mutate(lichen = as.numeric(lichen, na.rm = TRUE))|>
+  #mutate(litter = as.numeric(litter, na.rm = TRUE))|>
+  mutate(soil = as.numeric(soil, na.rm = TRUE))|>
+  mutate(rock = as.numeric(rock, na.rm = TRUE))|>
+  mutate(poo = as.numeric(poo, na.rm = TRUE))|>
+  #mutate(fungus = as.numeric(fungus, na.rm = TRUE))|>
+  mutate(bare = as.numeric(bare, na.rm = TRUE))|>
+  #mutate(logger = as.numeric(logger, na.rm = TRUE))|>
+  #mutate(vegetation_cover = as.numeric(vegetation_cover, na.rm = TRUE))|>
+  mutate(vegetation_height_mm = as.numeric(vegetation_height_mm, na.rm = TRUE))|>
+  #mutate(moss_depth_mm = as.numeric(moss_depth_mm, na.rm = TRUE))|>
+  mutate(date_comment = ifelse(date == "14.08.2019/15.08.2019", "Vegetation analysis was conducted on the 14.08.2019 and the 15.08.2019", NA)) |>
+  mutate(date = ifelse(date == "14.08.2019/15.08.2019", "14.08.2019", date)) |>
+  mutate(date_comment = ifelse(date == "01.08.2019/02.08.2019", "Vegetation analysis was conducted on the 01.08.2019 and the 02.08.2019", NA)) |>
+  mutate(date = ifelse(date == "01.08.2019/02.08.2019", "01.08.2019", date)) |>
+  mutate(date_comment = ifelse(date == "30.07.2019/31.07.2019", "Vegetation analysis was conducted on the 30.07.2019 and the 31.07.2019", NA)) |>
+  mutate(date = ifelse(date == "30.07.2019/31.07.2019", "30.07.2019", date)) |>
+  mutate(date_comment = ifelse(date == "31.07.2019/01.08.2019", "Vegetation analysis was conducted on the 31.07.2019 and the 01.08.2019", NA)) |>
+  mutate(date = ifelse(date == "31.07.2019/01.08.2019", "31.07.2019", date)) |>
+  mutate(date_comment = ifelse(date == "30.07.2021/02.08.2021", "Vegetation analysis was conducted on the 30.07.2021 and the 02.08.2021", NA)) |>
+  mutate(date = ifelse(date == "30.07.2021/02.08.2021", "30.07.2021", date)) |>
+  mutate(date = dmy(date))
+  
+  
+  
 #meta data
 meta_data <- meta_data_download|>
   select(plotID, OTC, treatment) #selecting relevant variables from the meta data
@@ -768,7 +796,7 @@ Ulv_7_3_2019 <- community_clean|>
   filter(plotID == "Ulv_7_3") |>
   filter(year == 2019) |>
   select(species, cover, plotID)|>
-  mutate(year = "2018")|>
+  mutate(year = 2018)|>
   unique()|>
   rename(imputed_cover = cover)
 
@@ -777,3 +805,5 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(plotID == "Ulv_7_3" & year == 2018, imputed_cover, cover)) |> #Using coverdata from 2019
   select(-imputed_cover) |>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover)) #Fes_ovi did not have a cover in 2019, it was only present in one subplot therefore it gets a 1 in cover.
+
+#read_csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
