@@ -20,7 +20,7 @@ library(here)
 
 #Community_data
 get_file(node = "zhk3m",
-         file = "INCLINE_community_2018_2019_2021_2022_korrekturlest.csv",
+         file = "INCLINE_community_2018_2019_2021_2022.csv",
          path = "data",
          remote_path = "RawData/Community")
 
@@ -31,9 +31,11 @@ get_file(node = "zhk3m",
          remote_path = "RawData")
 
 
+
 ##### Reading in data #####
 #Community data
-community_data_download <- read_delim (file = here("data\\INCLINE_community_2018_2019_2021_2022_korrekturlest.csv", col_types = cols(.default = col_character())))
+community_data_download <- read_delim("data\\INCLINE_community_2018_2019_2021_2022.csv", col_types = cols(.default = col_character()))
+
 
 #Meta data
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta data to fill in the missing part of the treatment and OTC column for 2018.
@@ -815,7 +817,7 @@ community_clean_categories <- community_clean|>
   mutate(groups = ifelse(species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan"), "Deciduous_shrubs", groups))|>
   mutate(groups = ifelse(species %in% c("Emp_nig", "Vac_vit", "Cal_vul"), "Evergreen_shrubs", groups))
 
-write.table(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_Joseph5.csv",row.names= FALSE, sep = "|")
+#write.table(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_Joseph5.csv",row.names= FALSE, sep = "|")
 
 #read_csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
 
