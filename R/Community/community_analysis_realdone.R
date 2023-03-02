@@ -7,18 +7,17 @@ source(here::here("R/Community", "cleaning_community.R")) #Finn ut av
 #For this master thesis we want to investigate species richness and species evenness to see if the community changes when warming and new biotic interactions are implemented in a already relative stable system. The reason for this, is to see how drastic changes we can expect in the alpine due to accelerating climate warming, and to see how fast we can expact them to occure.
 #We also want to investigate specifically what effect the different treatments have on the alpine plant community and are using ordinations to investegate patterns. 
 
-#Downloading some meta data and making an enivronment
+#Downloading some meta data and making an environment
 env <- meta_data_download|>
   select(plotID, `precipitation_2009-2019`)
 
-#Using the cleaned dataset as 
+#Using the cleaned dataset as base. 
 #Community ready for ordination with only subplots analysed in 2022. Remove replicas so that we only get one cover for each specie in each plotID.
 the_communities <- community_clean |>
   select(block|plot|year|warming|treatment|site|species|presence|plotID|cover|subPlot)|> #Select the columns we want to use.
   filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|> #Selects away the transplants species as these only function as a treatment and not a part of the original community.
   filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>#Selects away the subplots that are in the frame for the data to be comparable with the 2022 data.
   select(-subPlot)|> #Removing the subplot column from the dataframe.
-  mutate(cover = as.numeric(cover))|>
   mutate(year = as.numeric(year))|>
   group_by(site, year, species, warming, treatment)|>
   mutate(treat = paste0(warming, "_", treatment)) |> #making a new column called treat that combines the warming treatment and the interaction treatment. 
@@ -127,16 +126,18 @@ com_ord_wide <- community_ordination|>
 #Starting to make a pv table
 
 df <- data.frame("Testing_of_effects" = c("Site", "Time", "Warming", "Site and time","Site over time", "Warming over time", "Warming over site and time", "Adding plants with novel traits", "Adding plants with extant traits", "Precipitaiton gradient with novel", "Precipitation gradient with extant", "Differnet trends among sites", "Total explained by site and warming over time", "Total explained by warming and transplant over time"),
-                "Hypothesis" = c("", "","", "", "", "", "", "", "", "", "", ""),
+                "Hypothesis" = c("", "","", "", "", "", "", "", "", "", "", "", "", ""),
                 "Variables" = c("S", "T", "S*T", "S+T","W", "W*T", "W*S+T", "W*N*T", "W*E*T", "W*N*T*P", "W*E*T*P", "S*W*T", "S*W*T", "W*Tr*T"),
-                "Covariables" = c("","","", "", "", "", "W*T+S+T", "W*N*T+W*E*T+S+T", "W*E*T+W*N*T+S+T","W*T+S*T", "-" , ""),
-                "Variance" = c("9.359", "0.24", "0.28", "9,360", "9.375", "", "", "", "", "", ""),
-                "P(999)" = c("0.001***", "0.011*", "0.002**", "0.001***", "0.004**",  "", "", "", "", "", ""))
+                "Covariables" = c("","", "","","", "", "", "", "W*T+S+T", "W*N*T+W*E*T+S+T", "W*E*T+W*N*T+S+T","W*T+S*T", "-" , ""),
+                "Variance" = c("9.359", "0.24", "0.28", "9,360", "9.375", "", "", "", "", "", "", "", "", ""),
+                "P(999)" = c("0.001***", "0.011*", "0.002**", "0.001***", "0.004**",  "", "", "", "", "", "", "", "", ""))
 df
 
 ########################################
 #######RDA ordinations to the PRC#######
 ########################################
+
+#---------------------Site vs time ---------------------
 #What do we want to investigate? Are there a difference between sites or time?
 RDA_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site, data = community_ordination)
 RDA_time <- rda(sqrt(community_ordination[,-c(1:7, 87:89)]) ~ year, data = community_ordination)
@@ -147,7 +148,6 @@ null <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ 1 , data = community_
 #Testing site and time alone up against the null model
 anova(null, RDA_site)
 anova(null, RDA_time)
-anova(null, RDA_warm)
 
 #Site is where the biggest variance exist. Therefor will site be used further to test other differences. 
 RDA_site_and_time <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site + year, data = community_ordination) #use
@@ -157,6 +157,14 @@ RDA_site_over_time <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site * 
 anova(RDA_site, RDA_site_and_time) #The p value is significant, however there is little variance between site and time compared to site alone. 
 anova(RDA_site, RDA_site_over_time) #Significant p value.
 anova(RDA_site_and_time, RDA_site_over_time) #The p value is not significant and varies between 0.06 and 0.05. However the variance increases more than with site + time
+
+#When investiagting the variance between the interaction between site and year, and adding site to year, the variance is so little that its probably not necessary to use the interaction. However when testing warming with the site year interaction, this variance is a little bit higher than the others. Therefor more of the variance might be described with the site year interaction than first thought. 
+#The next step in my head would therefore be to test the interaction between warming time and site with other variables. 
+
+#---------------------Warming---------------------
+#Further we want to investigate the effect of warming. So first we test warming alone
+RDA_warm <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming, data = community_ordination)#Yes
+anova(null, RDA_warm)
 
 #The next step is to include warming to see if warming have an effect in the sites over time.
 RDA_warm_adding_time_and_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming + site + year, data = community_ordination) #This
@@ -169,8 +177,7 @@ anova(RDA_site_over_time, RDA_warm_adding_time_over_site) #P value = 0.001 eigen
 anova(RDA_site_and_time, RDA_warm_over_time_and_site) #P value = 0.003 eigenval = 9.36
 anova(RDA_site_over_time, RDA_warm_over_time_and_over_site) #P value = 0.001 eigenval = 9.43
 
-#When investiagting the variance between the interaction between site and year, and adding site to year, the variance is so little that its probably not necessary to use the interaction. However when testing warming with the site year interaction, this variance is a little bit higher than the others. Therefor more of the variance might be described with the site year interaction than first thought. 
-#The next step in my head would therefore be to test the interaction between warming time and site with other variables. 
+#---------------------Transplant---------------------
 
 #First with transplant
 RDA_transplant_adding_warm_and_time_and_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant + warming + site + year, data = community_ordination)
@@ -214,6 +221,12 @@ anova(RDA_warm_adding_time_over_site, RDA_precip_over_warm_site_and_year)
 #We  also expect that along the precipitation gradient that competition increases, porbaly see a larger difference between transplants in general, novel and extant. 
 #The next step is to investigate if the different treatments have an effect in totalt, maybe compare them to a null model?
 
+
+
+
+############################################
+###### Tried something stuff down here #####
+############################################
 
 ####RDA ordinations to the PRC####
 RDA_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site, data = community_ordination)
@@ -383,6 +396,8 @@ anova(null, prec)
 anova(null, site)
 anova(null, time)
 anova(null, treat)
+
+
 ##########################
 #####Species richness#####
 ##########################
