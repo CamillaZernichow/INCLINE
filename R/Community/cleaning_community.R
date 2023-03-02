@@ -1,4 +1,6 @@
-#### PLANT COMMUNITY DATA CLEANING IN INCLINE ####
+##########################################################
+######## PLANT COMMUNITY DATA CLEANING IN INCLINE ########
+##########################################################
 
 ##### Loading libraries #####
 library(osfr)
@@ -13,7 +15,7 @@ library(ggvegan)
 library(gridExtra)
 library(here)
 
-
+#Use your OSF token to get excess to osf. From here you can download neccesary files
 #osf_auth(token = "")#Your personal OSF token
 
 #Community_data
@@ -32,13 +34,14 @@ get_file(node = "zhk3m",
 ##### Reading in data #####
 #Community data
 community_data_download <- read_delim (file = here("data\\INCLINE_community_2018_2019_2021_2022_korrekturlest.csv", col_types = cols(.default = col_character())))
+
 #Meta data
-meta_data_download <- read_delim("data\\INCLINE_metadata.csv")
+meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta data to fill in the missing part of the treatment and OTC column for 2018.
 
 
-#### Fixing mistakes in the dataset ####
-##### Cleaning variables in dataset #####
-#By renaming columns after the same standard, it is easier to use them, and we therefor don't need to think about their unique names when using them.
+########################################## Fixing mistakes in the dataset ##########################################
+###### Cleaning variables in dataset ######
+#For it to be easier to work with the data, all the names will be standardized after the same rules.The general rule will be capital letter on the specie name with an underscore to the surname and an underscore to cf if they have a cf at the end. All columns that have a name with space, gets a underscore instead for space. All other names that arent species gets small letters instead of capital letters. I recently learned that it is a code you can use that will fix all these problems automatic. By renaming the columns we dont need to think of their unique names when working with the data. Also fixed general mistakes like making the columns numeric, og to data after what it should be.
 
 #community data
 community_data <- community_data_download |>
@@ -50,14 +53,14 @@ community_data <- community_data_download |>
   mutate(year = as.numeric(year, na.rm = TRUE))|>
   mutate(moss = as.numeric(moss, na.rm = TRUE))|>
   mutate(lichen = as.numeric(lichen, na.rm = TRUE))|>
-  #mutate(litter = as.numeric(litter, na.rm = TRUE))|>
+  mutate(litter = as.numeric(litter, na.rm = TRUE))|>
   mutate(soil = as.numeric(soil, na.rm = TRUE))|>
   mutate(rock = as.numeric(rock, na.rm = TRUE))|>
   mutate(poo = as.numeric(poo, na.rm = TRUE))|>
-  #mutate(fungus = as.numeric(fungus, na.rm = TRUE))|>
+  mutate(fungus = as.numeric(fungus, na.rm = TRUE))|>
   mutate(bare = as.numeric(bare, na.rm = TRUE))|>
-  #mutate(logger = as.numeric(logger, na.rm = TRUE))|>
-  #mutate(vegetation_cover = as.numeric(vegetation_cover, na.rm = TRUE))|>
+  mutate(logger = as.numeric(logger, na.rm = TRUE))|>
+  mutate(vegetation_cover = as.numeric(vegetation_cover, na.rm = TRUE))|>
   mutate(vegetation_height_mm = as.numeric(vegetation_height_mm, na.rm = TRUE))|>
   #mutate(moss_depth_mm = as.numeric(moss_depth_mm, na.rm = TRUE))|>
   mutate(date_comment = ifelse(date == "14.08.2019/15.08.2019", "Vegetation analysis was conducted on the 14.08.2019 and the 15.08.2019", NA)) |>
