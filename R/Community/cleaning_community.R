@@ -30,6 +30,7 @@ get_file(node = "zhk3m",
          path = "data",
          remote_path = "RawData")
 
+#Name_dictionary
 get_file(node = "zhk3m",
          file = "INCLINE_community_name_dictionary.csv",
          path = "data",
