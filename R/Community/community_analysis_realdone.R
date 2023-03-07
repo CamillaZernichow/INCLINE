@@ -118,7 +118,7 @@ com_ulv <- community_ordination |>
 
 #Community wider with everything. Combinging this with the community_ordination to get all the locations in the same. 
 com_ord_wide <- community_ordination|>
-  select(-warming, -treatment, -site, -treat, -plotID, -year, -transplant)
+  select(-warming, -treatment, -site, -treat, -plotID, -year, -transplant, -precip_2009_2019, -novel, -extant)
 
 ####################################
 ######Principal response curve######
@@ -132,22 +132,86 @@ df <- data.frame("Testing_of_effects" = c("Site", "Time", "Warming", "Site and t
                 "Variance" = c("9.359", "0.24", "0.28", "9,360", "9.375", "", "", "", "", "", "", "", "", ""),
                 "P(999)" = c("0.001***", "0.011*", "0.002**", "0.001***", "0.004**",  "", "", "", "", "", "", "", "", ""))
 df
+#######################
+#####-------------#####
+
+
+
+
 
 ########################################
 #######RDA ordinations to the PRC#######
 ########################################
 
+#Kjør nullmodell på alle prediktorene først. Ta ut tid. Interressert om det har en effekt. 
+
 #---------------------Site vs time ---------------------
 #What do we want to investigate? Are there a difference between sites or time?
 RDA_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site, data = community_ordination)
-RDA_time <- rda(sqrt(community_ordination[,-c(1:7, 87:89)]) ~ year, data = community_ordination)
+RDA_warm <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming, data = community_ordination)#Yes
+RDA_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ precip_2009_2019, data = community_ordination)
+
 
 #To investigate the question, we set up a null model to test the models alone before testing adding other variables
 null <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ 1 , data = community_ordination)
 
 #Testing site and time alone up against the null model
-anova(null, RDA_site)
-anova(null, RDA_time)
+anova(null, RDA_site) #***, Eigenval = 9.359575
+anova(null, RDA_warm) #**, Eigenval = 0.02753673
+anova(null, RDA_precip) #***, Eigenval = 6.710349
+
+#Testing everything over site, making new RDAs
+
+RDA_warm_and_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming + site, data = community_ordination) 
+RDA_warm_over_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming * site, data = community_ordination)
+
+anova(RDA_site, RDA_warm_and_site) #***, Eigenval = 9.360865
+anova(RDA_site, RDA_warm_over_site) #***, Eigenval = 9.410002
+
+#Warming interaktet with site has the highest variance. Therefore we go further with this. 
+#First try precip instead of site
+
+RDA_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming + precip_2009_2019, data = community_ordination) 
+RDA_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_precip, RDA_warm_and_precip) #**, Eigenval = 6.712577
+anova(RDA_precip, RDA_warm_over_precip) #***, Eigenval = 6.735336
+anova(RDA_warm_and_precip, RDA_warm_over_precip)
+#----------Transplant--------------
+RDA_transplant_adding_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant + warming * precip_2009_2019, data = community_ordination)
+#Eigenval = 6.737078
+RDA_transplant_over_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant * warming * precip_2009_2019, data = community_ordination)
+#Eigenval = 6.742093
+
+anova(RDA_warm_over_precip, RDA_transplant_adding_warm_over_precip) #0.019*
+anova(RDA_warm_over_precip, RDA_transplant_over_warm_and_precip) #0.026*
+anova(RDA_transplant_adding_warm_over_precip, RDA_transplant_over_warm_and_precip) #Ikke ta interaksjonen
+
+#------------Novel vs Extant---------------
+RDA_warm_and_precip_added_treatment <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ treatment + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_treatment <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ treatment * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_over_precip, RDA_warm_and_precip_added_treatment) #0.008**, Eigenval = 6.737166
+anova(RDA_warm_over_precip, RDA_warm_and_precip_and_treatment) #0.001***, Eigenval = 6.747975
+anova(RDA_warm_and_precip_added_treatment, RDA_warm_and_precip_and_treatment) #0.011*
+
+RDA_warm_and_precip_added_extant <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ extant + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_extant <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ extant * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_over_precip, RDA_warm_and_precip_added_extant)
+anova(RDA_warm_over_precip, RDA_warm_and_precip_and_extant)
+anova(RDA_warm_and_precip_added_extant, RDA_warm_and_precip_and_extant)
+
+RDA_warm_and_precip_added_novel <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ novel + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_novel <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ novel * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_and_precip, RDA_warm_and_precip_added_novel)
+anova(RDA_warm_and_precip, RDA_warm_and_precip_and_novel)
+anova(RDA_warm_and_precip_added_novel, RDA_warm_and_precip_and_novel)
+
+#####_________________________######
+
+#Everything with time, take it away
 
 #Site is where the biggest variance exist. Therefor will site be used further to test other differences. 
 RDA_site_and_time <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site + year, data = community_ordination) #use
@@ -158,13 +222,11 @@ anova(RDA_site, RDA_site_and_time) #The p value is significant, however there is
 anova(RDA_site, RDA_site_over_time) #Significant p value.
 anova(RDA_site_and_time, RDA_site_over_time) #The p value is not significant and varies between 0.06 and 0.05. However the variance increases more than with site + time
 
-#When investiagting the variance between the interaction between site and year, and adding site to year, the variance is so little that its probably not necessary to use the interaction. However when testing warming with the site year interaction, this variance is a little bit higher than the others. Therefor more of the variance might be described with the site year interaction than first thought. 
+#When investigating the variance between the interaction between site and year, and adding site to year, the variance is so little that its probably not necessary to use the interaction. However when testing warming with the site year interaction, this variance is a little bit higher than the others. Therefor more of the variance might be described with the site year interaction than first thought. 
 #The next step in my head would therefore be to test the interaction between warming time and site with other variables. 
 
 #---------------------Warming---------------------
 #Further we want to investigate the effect of warming. So first we test warming alone
-RDA_warm <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming, data = community_ordination)#Yes
-anova(null, RDA_warm)
 
 #The next step is to include warming to see if warming have an effect in the sites over time.
 RDA_warm_adding_time_and_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming + site + year, data = community_ordination) #This
@@ -178,7 +240,7 @@ anova(RDA_site_and_time, RDA_warm_over_time_and_site) #P value = 0.003 eigenval 
 anova(RDA_site_over_time, RDA_warm_over_time_and_over_site) #P value = 0.001 eigenval = 9.43
 
 #---------------------Transplant---------------------
-
+#After tresting with warming it looks like the interaction with warming, site and time is where there is most variance. However just to be sure, we will test both. 
 #First with transplant
 RDA_transplant_adding_warm_and_time_and_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant + warming + site + year, data = community_ordination)
 #Eigenval = 9.369
@@ -459,6 +521,69 @@ base <-  species_richness |>
 p_vio <- base + geom_violin(aes(x = treat, y = richness,fill = treatment))
 p_vio + stat_summary(fun = mean, geom = "point", shape = 1, size = 1)
 
+####Testing richness ####
+library(lme4)
+library(lmerTest)
+
+
+#GLM på begge
+#Prediktor 1: nedbør (Enten være tallene eller 1234, eller site navnen) Hvis vi bruker tallene spør vi om det er en lineær sammenheng?.
+#Prediktor 2: varme eller ikke varme. 
+#Prediktor 3:Hvordan behandle transplantsene. Teste om det er en forskjell mellom transplant og kontroll. Så eventuelt teste om det er en forskjell mellom novel og extant.
+#Prediktor 4: Tid
+
+#Strukturvariabler: site, block
+
+species_richness <- species_richness|>
+  #left_join(env, by = "plotID")|>
+  #rename("precip" = "precipitation_2009-2019") |>
+  #filter(year == 2022)|>
+  mutate(new_site = paste0(substr(site, 1,3), "_", block))
+
+richmod_precip <- glmer(richness ~ scale(precip) + warming + (1|new_site), data = species_richness, family = poisson)
+
+richmod_treat_warm_precip<- glmer(richness ~ treatment + warming + precip + (1|site/block), data = species_richness, family = poisson)
+#
+
+length(species_richness$richness)
+
+richmod_rich_warm <- glmer(richness ~ warming + (1|site/block), data = species_richness, family = poisson)
+
+richmod_rich_treat <- glmer(richness ~ treatment + (1|site/block), data = species_richness, family = poisson)
+
+richmod_rich_warm_treatment_over_precip <- glmer(richness ~ warming * scale(precip) + treatment * scale(precip) + (1|site/block), data = species_richness, family = poisson)
+
+richmod_rich_warm_treat_precip <- glmer(richness ~ warming * treatment * scale(precip) + (1|site/block), data = species_richness, family = poisson) #Noe med randomstrukturen som den klager på
+
+mod_rich_forenklet <- glmer(richness ~ warming * treatment * scale(precip) + (1|site), data = species_richness, family = poisson)
+
+mod_rich_forenklet
+
+mod_rich_prerip <- glmer(richness ~ warming * year * scale(precip) + (1|site/block), data = species_richness, family = poisson)
+mod_rich_prerip
+
+anova(richmod_rich_treat, type = "III")
+
+#Bruke paste og ta de tre første bokstavene i site sammen med blokknummer
+
+#Hvis man kjører på alle årene må man ha variablene * year. FOr masteren kan vi egentlig bare kjøre på 2022. Lag modeller kun for 2022 i begynnelsen. 
+
+#Hvis ikke treveisinteraksjonen: prøv fireveisinteraksjon (Kjør en modell per lokalitet) eller. 
+#SI til richard at studiet er satt opp som hypotesetesting og derfor trenger jeg hjelp med det!
+
+anova(mod_rich1, mod_rich)
+
+#ta vekk site i randomeffects
+
+#Richness er en count. poisson
+
+#Evenness  variable binomialt
+
+
+
+
+#############################
+#####Evenness#####
 
 #Species evenness
 species_evenness <- community_clean |>
@@ -490,12 +615,17 @@ species_evenness <- community_clean |>
   ungroup()
 
 evenness <- eventstar(com_ord_wide)
+
 comp_data<-merge(evenness,community_ordination, by='row.names',all=TRUE)|>
   select(-c(Hstar,Dstar,qstar))
+
 comp_data <- comp_data|>
   group_by(site,year,treat)|>
   mutate(treat_evenness = mean(Estar))|>
   ungroup()
+
+
+hist(comp_data$treat_evenness)
 
 
 plot_evenness_Plot <- comp_data|>
