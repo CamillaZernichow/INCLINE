@@ -30,7 +30,10 @@ get_file(node = "zhk3m",
          path = "data",
          remote_path = "RawData")
 
-
+get_file(node = "zhk3m",
+         file = "INCLINE_community_name_dictionary.csv",
+         path = "data",
+         remote_path = "RawData/Community")
 
 ##### Reading in data #####
 #Community data
@@ -40,6 +43,7 @@ community_data_download <- read_delim("data\\INCLINE_community_2018_2019_2021_20
 #Meta data
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta data to fill in the missing part of the treatment and OTC column for 2018.
 
+name_dictionary <- read_delim("data\\INCLINE_community_name_dictionary.csv")
 
 ########################################## Fixing mistakes in the dataset ##########################################
 ###### Cleaning variables in dataset ######
@@ -83,12 +87,18 @@ community_data <- community_data_download |>
 meta_data <- meta_data_download|>
   select(plotID, OTC, treatment) #selecting relevant variables from the meta data
 
-##### Combining community data and meta data #####
+##### Combining community data and meta data and translating names #####
 # The first year the data was collected, we didn't register the treatment. Therefor by combining the community data and meta data, we will get the missing information. We are also putting in plotID as a new variable that is easier to work with than separated block and plot information. 
 
 community_data <- community_data |>
   left_join(meta_data, by = "plotID") |>
-  rename(warming = OTC)
+  rename(warming = OTC) |>
+  left_join(name_dictionary, by = c("recorder" = "initials"))|>
+  select(-recorder) |>
+  rename(recorder = name) |>
+  left_join(name_dictionary, by = c("writer" = "initials"))|>
+  select(-writer) |>
+  rename(writer = name)
 
 
 ##### Turfmapper #####
@@ -124,15 +134,15 @@ cover_column <- community_data_longer|>
   mutate(cover = as.integer(cover))
 
 vegetation_cover_column <-community_data_longer|> 
-  select(site, block, plot, year, species, vegetation_cover) |> 
+  select(plotID, year, vegetation_cover) |> 
   filter(!is.na(vegetation_cover)) |>
   unique()
 
 #Combining the new column "cover" and the elongated community data. Dataset with presence absence data.
-community_clean_test <-  community_data_longer |>
+community_clean <-  community_data_longer |>
   left_join(cover_column, by = c("plot", "block", "site", "plotID", "year", "species"))|>
   select(-vegetation_cover)|>
-  left_join(vegetation_cover_column, by = c("site", "block", "plot", "year", "species"))|>
+  left_join(vegetation_cover_column, by = c("plotID", "year"))|>
   mutate(measure = case_when(year == 2022 & subPlot == 9 ~ "plot",
                              TRUE ~ measure)) |>
   unique()|>
@@ -871,10 +881,14 @@ total_cover <- community_clean |>
 
 vegetation_height_and_moss_depth_mean<- community_clean |>
   select(plotID, subPlot, year, vegetation_height_mm, moss_depth_mm)|>
-  unique()|>
+  unique()|> #Sjekk at det kun er en per plotID subplot
+  group_by(plotID, year)|>
   mutate(vegetation_height_mean = mean(moss_depth_mm, na.rm = TRUE), 
          moss_depth_mean = mean(vegetation_height_mm, na.rm = TRUE)) |>
-  select( -c(vegetation_height_mm, moss_depth_mm))
+  select( -c(vegetation_height_mm, moss_depth_mm)) |>
+  mutate(vegetation_height_mean = round(vegetation_height_mean, digits = 1)) |>
+  mutate(moss_depth_mean = round(moss_depth_mean, digits = 1)) |>
+  ungroup()
          
 community_clean <- community_clean |>
   left_join(total_cover, by = c("subPlot","plotID", "year"))|>
@@ -884,24 +898,25 @@ community_clean <- community_clean |>
 write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv",row.names= FALSE)
 
 
+
 community_clean_subplot <- community_clean |>
   filter(measure == "subPlot") |>
   select("site", "plotID", "warming", "treatment", "year", "date", 
          "date_comment", "recorder", "writer", "weather", "subPlot","moss", 
          "lichen", "litter", "rock", "poo", "fungus", "bare_ground",
          "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species", 
-"value", "presence", "fertile", "dominance", "juvenile", "seedling", "comments")
+"value", "presence", "fertile", "dominance", "juvenile", "seedling")
 
 
 community_clean_species_cover <- community_clean |>
   select("site", "plotID", "warming", "treatment", "year", "date", 
          "date_comment", "recorder", "writer", "weather", "functional_group", "species", 
-         "cover", "comments") |>
+         "cover") |>
   unique()
 
 community_clean_species_cover_plotlevel_info <- community_clean |>
   select("site", "plotID", "warming", "treatment", "year", "date", 
-         "date_comment", "recorder", "writer", "weather", "comments", "vegetation_cover", 
+         "date_comment", "recorder", "writer", "weather", "vegetation_cover", 
          "vegetation_height_mm", "moss_depth_mm","total_bryophyte_cover", 
          "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover", 
          "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
