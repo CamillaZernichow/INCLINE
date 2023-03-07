@@ -64,7 +64,7 @@ community_data <- community_data_download |>
   mutate(logger = as.numeric(logger, na.rm = TRUE))|>
   mutate(vegetation_cover = as.numeric(vegetation_cover, na.rm = TRUE))|>
   mutate(vegetation_height_mm = as.numeric(vegetation_height_mm, na.rm = TRUE))|>
-  #mutate(moss_depth_mm = as.numeric(moss_depth_mm, na.rm = TRUE))|>
+  mutate(moss_depth_mm = as.numeric(moss_depth_mm, na.rm = TRUE))|>
   mutate(date_comment = ifelse(date == "14.08.2019/15.08.2019", "Vegetation analysis was conducted on the 14.08.2019 and the 15.08.2019", NA)) |>
   mutate(date = ifelse(date == "14.08.2019/15.08.2019", "14.08.2019", date)) |>
   mutate(date_comment = ifelse(date == "01.08.2019/02.08.2019", "Vegetation analysis was conducted on the 01.08.2019 and the 02.08.2019", NA)) |>
@@ -123,14 +123,26 @@ cover_column <- community_data_longer|>
   mutate(cover = ifelse(cover == 0 & species == "Hyp_mac" & site == "Ulvehaugen" & year == 2019 & block == 7 & plot == 3, 1, cover)) |>
   mutate(cover = as.integer(cover))
 
+vegetation_cover_column <-community_data_longer|> 
+  select(site, block, plot, year, species, vegetation_cover) |> 
+  filter(!is.na(vegetation_cover)) |>
+  unique()
+
 #Combining the new column "cover" and the elongated community data. Dataset with presence absence data.
-community_clean <-  community_data_longer |>
+community_clean_test <-  community_data_longer |>
   left_join(cover_column, by = c("plot", "block", "site", "plotID", "year", "species"))|>
+  select(-vegetation_cover)|>
+  left_join(vegetation_cover_column, by = c("site", "block", "plot", "year", "species"))|>
   mutate(measure = case_when(year == 2022 & subPlot == 9 ~ "plot",
                              TRUE ~ measure)) |>
+  unique()|>
   filter(subPlot != "cover")
 
+#Se hva feilen blir når man left_joiner vegetation colonnen. 
+
 # To get the data ready for turfmapper the whole plot information "plot" in "measure" needs to be recoded to have the value 1 in the measure column. "plot" also needs to be filtered out in the subPlot column. This is done in seperate code.
+
+
 
 #################################################################################
 ######     Turf mapper process happens here, see script for the code       ######
@@ -811,17 +823,102 @@ community_clean <- community_clean|>
   select(-imputed_cover) |>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover)) #Fes_ovi did not have a cover in 2019, it was only present in one subplot therefore it gets a 1 in cover.
 
-community_clean_categories <- community_clean|>
-  mutate(groups = ifelse(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul"), "Forbs", species))|>
-  mutate(groups = ifelse(species %in% c( "Nar_str", "Agr_mer", "Agr_cap", "Car_big", "Car_nor", "Car_cap", "Car_pal", "Car_pil", "Poa_pra", "Car_vag", "Ave_fle", "Des_ces", "Poa_alp", "Jun_tri", "Phl_alp", "Fes_ovi", "Fes_rub", "Sau_alp", "Fes_sp" ,"Car_sp", "Ant_dio", "Fes_viv", "Des_alp", "Car_fla", "Car_sax", "Ant_sp", "Car_atr" ), "Graminoids", groups))|>
-  mutate(groups = ifelse(species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan"), "Deciduous_shrubs", groups))|>
-  mutate(groups = ifelse(species %in% c("Emp_nig", "Vac_vit", "Cal_vul"), "Evergreen_shrubs", groups))
+community_clean <- community_clean|>
+  mutate(functional_group = ifelse(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul"), "Forbs", species))|>
+  mutate(functional_group = ifelse(species %in% c( "Nar_str", "Agr_mer", "Agr_cap", "Car_big", "Car_nor", "Car_cap", "Car_pal", "Car_pil", "Poa_pra", "Car_vag", "Ave_fle", "Des_ces", "Poa_alp", "Jun_tri", "Phl_alp", "Fes_ovi", "Fes_rub", "Sau_alp", "Fes_sp" ,"Car_sp", "Ant_dio", "Fes_viv", "Des_alp", "Car_fla", "Car_sax", "Ant_sp", "Car_atr" ), "Graminoids", functional_group))|>
+  mutate(functional_group = ifelse(species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan"), "Deciduous_shrubs", functional_group))|>
+  mutate(functional_group = ifelse(species %in% c("Emp_nig", "Vac_vit", "Cal_vul"), "Evergreen_shrubs", functional_group))
 
-#write.table(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_Joseph5.csv",row.names= FALSE, sep = "|")
+community_clean <- community_clean|>
+  mutate(bare_ground = soil) |>
+  mutate(bare_ground = ifelse(!is.na(bare), bare, bare_ground)) |>
+  select(-block, -plot, -bare, -soil)
 
-#read_csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
+total_cover <- community_clean |>
+  select(plotID, subPlot, moss, year, measure, poo, lichen, litter, rock, fungus, bare_ground) |>
+  filter(measure == "subPlot") |>
+  unique() |>  #Gjør at koden kun tar de unike verdiene, og tar derfor vekk kopier. 
+  group_by(plotID, year) |>
+  mutate(total_bryophyte_cover = sum(moss, na.rm = TRUE) / 29, 
+         total_litter_cover = sum(litter, na.rm = TRUE) / 29,
+         total_lichen_cover = sum(lichen, na.rm = TRUE) / 29, 
+         total_bare_ground_cover = sum(bare_ground, na.rm = TRUE) / 29, 
+         total_poo_cover = sum(poo, na.rm = TRUE) / 29,
+         total_rock_cover = sum(rock, na.rm = TRUE) / 29,
+         total_fungus_cover = sum(fungus, na.rm = TRUE) / 29) |>
+  mutate(total_bryophyte_cover = case_when(total_bryophyte_cover == 0 ~ NA,
+                                           total_bryophyte_cover < 1 ~ 1,
+                                           total_bryophyte_cover > 0 ~ round(total_bryophyte_cover, digits = 0)),
+         total_litter_cover = case_when(total_litter_cover == 0 ~ NA,
+                                        total_litter_cover < 1 ~ 1,
+                                        total_litter_cover > 0 ~ round(total_litter_cover, digits = 0)),
+         total_lichen_cover = case_when(total_lichen_cover == 0 ~ NA,
+                                        total_lichen_cover < 1 ~ 1,
+                                        total_lichen_cover > 0 ~ round(total_lichen_cover, digits = 0)), 
+         total_bare_ground_cover = case_when(total_bare_ground_cover == 0 ~ NA,
+                                             total_bare_ground_cover < 1 ~ 1,
+                                             total_bare_ground_cover > 0 ~ round(total_bare_ground_cover, digits = 0)), 
+         total_poo_cover = case_when(total_poo_cover == 0 ~ NA,
+                                     total_poo_cover < 1 ~ 1,
+                                     total_poo_cover > 0 ~ round(total_poo_cover, digits = 0)),
+         total_rock_cover = case_when(total_rock_cover == 0 ~ NA,
+                                      total_rock_cover < 1 ~ 1,
+                                      total_rock_cover > 0 ~ round(total_rock_cover, digits = 0)),
+         total_fungus_cover = case_when(total_fungus_cover == 0 ~ NA,
+                                        total_fungus_cover < 1 ~ 1,
+                                        total_fungus_cover > 0 ~ round(total_fungus_cover, digits = 0))) |>
+  select( -c( moss, measure, poo, lichen, litter, rock, fungus, bare_ground))
 
-mv("R/Community/community_analysis_real.R", "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\community_analysis_real.R")
+vegetation_height_and_moss_depth_mean<- community_clean |>
+  select(plotID, subPlot, year, vegetation_height_mm, moss_depth_mm)|>
+  unique()|>
+  mutate(vegetation_height_mean = mean(moss_depth_mm, na.rm = TRUE), 
+         moss_depth_mean = mean(vegetation_height_mm, na.rm = TRUE)) |>
+  select( -c(vegetation_height_mm, moss_depth_mm))
+         
+community_clean <- community_clean |>
+  left_join(total_cover, by = c("subPlot","plotID", "year"))|>
+  left_join(vegetation_height_and_moss_depth_mean, by = c("subPlot", "plotID", "year"))
 
-mv(R/Community/community_analysis_real.R, R/florwering/community_analysis_real.R)
 
+write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv",row.names= FALSE)
+
+
+community_clean_subplot <- community_clean |>
+  filter(measure == "subPlot") |>
+  select("site", "plotID", "warming", "treatment", "year", "date", 
+         "date_comment", "recorder", "writer", "weather", "subPlot","moss", 
+         "lichen", "litter", "rock", "poo", "fungus", "bare_ground",
+         "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species", 
+"value", "presence", "fertile", "dominance", "juvenile", "seedling", "comments")
+
+
+community_clean_species_cover <- community_clean |>
+  select("site", "plotID", "warming", "treatment", "year", "date", 
+         "date_comment", "recorder", "writer", "weather", "functional_group", "species", 
+         "cover", "comments") |>
+  unique()
+
+community_clean_species_cover_plotlevel_info <- community_clean |>
+  select("site", "plotID", "warming", "treatment", "year", "date", 
+         "date_comment", "recorder", "writer", "weather", "comments", "vegetation_cover", 
+         "vegetation_height_mm", "moss_depth_mm","total_bryophyte_cover", 
+         "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover", 
+         "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
+  unique() 
+
+write.csv(community_clean_species_cover, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_species_cover.csv",row.names= FALSE)
+
+write.csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_subplot.csv",row.names= FALSE)
+
+write.csv(names, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\navn.csv",row.names= FALSE)
+
+
+#Navn på osf = INCLINE_community
+
+#Teste med site, med site og block, og med new_site som inklduderer block
+
+
+#read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
+
+#read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
