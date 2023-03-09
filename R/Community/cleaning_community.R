@@ -149,7 +149,6 @@ community_clean <-  community_data_longer |>
   unique()|>
   filter(subPlot != "cover")
 
-#Se hva feilen blir når man left_joiner vegetation colonnen. 
 
 # To get the data ready for turfmapper the whole plot information "plot" in "measure" needs to be recoded to have the value 1 in the measure column. "plot" also needs to be filtered out in the subPlot column. This is done in seperate code.
 
@@ -880,55 +879,45 @@ total_cover <- community_clean |>
                                         total_fungus_cover > 0 ~ round(total_fungus_cover, digits = 0))) |>
   select( -c( moss, measure, poo, lichen, litter, rock, fungus, bare_ground))
 
-vegetation_height_and_moss_depth_mean<- community_clean |>
+vegetation_height_and_moss_depth_mean <- community_clean |>
   select(plotID, subPlot, year, vegetation_height_mm, moss_depth_mm)|>
-  unique()|> #Sjekk at det kun er en per plotID subplot
+  unique()|>
   group_by(plotID, year)|>
-  mutate(vegetation_height_mean = mean(moss_depth_mm, na.rm = TRUE), 
-         moss_depth_mean = mean(vegetation_height_mm, na.rm = TRUE)) |>
-  select( -c(vegetation_height_mm, moss_depth_mm)) |>
-  mutate(vegetation_height_mean = round(vegetation_height_mean, digits = 1)) |>
-  mutate(moss_depth_mean = round(moss_depth_mean, digits = 1)) |>
-  ungroup()
-         
+  mutate(vegetation_height_mean = mean(vegetation_height_mm, na.rm = TRUE),
+         moss_depth_mean = mean(moss_depth_mm, na.rm = TRUE)) |>
+  select(-c(vegetation_height_mm, moss_depth_mm, subPlot)) |>
+  mutate(vegetation_height_mean = round(vegetation_height_mean, digits = 0)) |>
+  mutate(moss_depth_mean = round(moss_depth_mean, digits = 0)) |>
+  ungroup() |>
+  unique()
 community_clean <- community_clean |>
   left_join(total_cover, by = c("subPlot","plotID", "year"))|>
-  left_join(vegetation_height_and_moss_depth_mean, by = c("subPlot", "plotID", "year"))
-
-
+  left_join(vegetation_height_and_moss_depth_mean, by = c("plotID", "year")) |>
+  unique() #removing any duplicates from the renaming process (if there was already a Car_big in the subplot and we renamed Car_sp tp Car_big for example)
 write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv",row.names= FALSE)
-
-
-
 community_clean_subplot <- community_clean |>
   filter(measure == "subPlot") |>
-  select("site", "plotID", "warming", "treatment", "year", "date", 
-         "date_comment", "recorder", "writer", "weather", "subPlot","moss", 
+  select("site", "plotID", "warming", "treatment", "year", "date",
+         "date_comment", "recorder", "writer", "weather", "subPlot","moss",
          "lichen", "litter", "rock", "poo", "fungus", "bare_ground",
-         "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species", 
-"value", "presence", "fertile", "dominance", "juvenile", "seedling")
-
-
+         "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species",
+         "value", "presence", "fertile", "dominance", "juvenile", "seedling") |>
+  unique()
 community_clean_species_cover <- community_clean |>
-  select("site", "plotID", "warming", "treatment", "year", "date", 
-         "date_comment", "recorder", "writer", "weather", "functional_group", "species", 
+  select("site", "plotID", "warming", "treatment", "year", "date",
+         "date_comment", "recorder", "writer", "weather", "functional_group", "species",
          "cover") |>
   unique()
 
-community_clean_species_cover_plotlevel_info <- community_clean |>
-  select("site", "plotID", "warming", "treatment", "year", "date", 
-         "date_comment", "recorder", "writer", "weather", "vegetation_cover", 
-         "vegetation_height_mm", "moss_depth_mm","total_bryophyte_cover", 
-         "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover", 
+community_clean_plotlevel_info <- community_clean |>
+  select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
+         "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
          "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
   unique() 
 
-write.csv(community_clean_species_cover, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_species_cover.csv",row.names= FALSE)
-
-write.csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_subplot.csv",row.names= FALSE)
-
-write.csv(names, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\navn.csv",row.names= FALSE)
-
+write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover.csv",row.names= FALSE)
+write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
+write.csv(community_clean_subplot, file = "INCLINE_community_plotlevel_info.csv",row.names= FALSE)
 
 #Navn på osf = INCLINE_community
 
