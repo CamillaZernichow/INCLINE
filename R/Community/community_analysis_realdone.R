@@ -14,7 +14,7 @@ env <- meta_data_download|>
 #Using the cleaned dataset as base. 
 #Community ready for ordination with only subplots analysed in 2022. Remove replicas so that we only get one cover for each specie in each plotID.
 the_communities <- community_clean |>
-  select(block|plot|year|warming|treatment|site|species|presence|plotID|cover|subPlot)|> #Select the columns we want to use.
+  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|> #Select the columns we want to use.
   filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|> #Selects away the transplants species as these only function as a treatment and not a part of the original community.
   filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>#Selects away the subplots that are in the frame for the data to be comparable with the 2022 data.
   select(-subPlot)|> #Removing the subplot column from the dataframe.
@@ -123,19 +123,6 @@ com_ord_wide <- community_ordination|>
 ####################################
 ######Principal response curve######
 ####################################
-#Starting to make a pv table
-
-df <- data.frame("Testing_of_effects" = c("Site", "Time", "Warming", "Site and time","Site over time", "Warming over time", "Warming over site and time", "Adding plants with novel traits", "Adding plants with extant traits", "Precipitaiton gradient with novel", "Precipitation gradient with extant", "Differnet trends among sites", "Total explained by site and warming over time", "Total explained by warming and transplant over time"),
-                "Hypothesis" = c("", "","", "", "", "", "", "", "", "", "", "", "", ""),
-                "Variables" = c("S", "T", "S*T", "S+T","W", "W*T", "W*S+T", "W*N*T", "W*E*T", "W*N*T*P", "W*E*T*P", "S*W*T", "S*W*T", "W*Tr*T"),
-                "Covariables" = c("","", "","","", "", "", "", "W*T+S+T", "W*N*T+W*E*T+S+T", "W*E*T+W*N*T+S+T","W*T+S*T", "-" , ""),
-                "Variance" = c("9.359", "0.24", "0.28", "9,360", "9.375", "", "", "", "", "", "", "", "", ""),
-                "P(999)" = c("0.001***", "0.011*", "0.002**", "0.001***", "0.004**",  "", "", "", "", "", "", "", "", ""))
-df
-#######################
-#####-------------#####
-
-
 
 
 
@@ -466,7 +453,7 @@ anova(null, treat)
 
 #Species richness
 species_richness <- community_clean |>
-  select(block|plot|year|warming|treatment|site|species|presence|plotID|cover|subPlot)|>
+  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|>
   filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|>
   filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>
   select(-subPlot)|>
@@ -534,15 +521,58 @@ library(lmerTest)
 
 #Strukturvariabler: site, block
 
-species_richness <- species_richness|>
-  #left_join(env, by = "plotID")|>
-  #rename("precip" = "precipitation_2009-2019") |>
-  #filter(year == 2022)|>
-  mutate(new_site = paste0(substr(site, 1,3), "_", block))
+#Need block to make new site: Therefore takes the block info from community_data and combine it by plotID to species_richness
+block_cloumn <- community_data|>
+  select(plotID, block)|> 
+  unique()
 
-richmod_precip <- glmer(richness ~ scale(precip) + warming + (1|new_site), data = species_richness, family = poisson)
+species_richness <- species_richness|>
+  left_join(env, by = "plotID")|>
+  rename("precip" = "precipitation_2009-2019") |>
+  left_join(block_cloumn, by = "plotID")|>
+  filter(year == 2022)|>
+  mutate(new_site = paste0(substr(site, 1,3), "_", block)) |>
+  mutate(precip = as.numeric(precip, na.rm = TRUE)) |>
+  mutate(overdisp_column = 1:nrow(species_richness))
+
+
+###########################
+##### Richness models #####
+###########################
+#Making models with precipitation. First a null model and a simple model with only precipitation. 
+null <- glmer(richness ~ 1 + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_precip <-  glmer(richness ~ scale(precip) + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+
+anova(null, richmod_precip)
+
+#Making models that includes warming
+richmod_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+
+anova(richmod_precip, richmod_warm_and_precip)
+anova(richmod_precip, richmod_warm_over_precip)
+anova(richmod_warm_and_precip, richmod_warm_over_precip)
+
+#Making models adding treatment
+richmod_treat_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_treat_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_treat_over_warm_adding_precip <-  glmer(richness ~ scale(precip) + warming * treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_treat_over_warm_over_precip <-  glmer(richness ~ scale(precip) * warming * treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+
+
+
+
+richmod_precip_new <- glmer(richness ~ scale(precip) + warming + (1|new_site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_precip_site <- glmer(richness ~ scale(precip) + warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_precip_bs <- glmer(richness ~ scale(precip) + warming + (1|site/block) + (1|overdisp_column), data = species_richness, family = poisson)
 
 richmod_treat_warm_precip<- glmer(richness ~ treatment + warming + precip + (1|site/block), data = species_richness, family = poisson)
+
+##### Trying a GLMMADMB #####
+#install.packages("glmmADMB")
+library(glmmADMB)
+
+
 #
 
 length(species_richness$richness)
