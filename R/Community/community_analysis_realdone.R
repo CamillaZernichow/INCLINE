@@ -545,6 +545,15 @@ richmod_precip <-  glmer(richness ~ scale(precip) + (1|site) + (1|overdisp_colum
 
 anova(null, richmod_precip)
 
+
+#Also cheking warming and site seperated aswell
+richmod_warm <- glmer(richness ~ warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
+richmod_site <- glmer(richness ~ site + (1|site) + (1|overdisp_column), data = species_richness, family = poisson) #Do not think this is right, however its easy to remove if neccesary
+
+anova(null, richmod_warm)
+anova(null, richmod_site)
+
+
 #Making models that includes warming
 richmod_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
 richmod_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
@@ -553,13 +562,17 @@ anova(richmod_precip, richmod_warm_and_precip)
 anova(richmod_precip, richmod_warm_over_precip)
 anova(richmod_warm_and_precip, richmod_warm_over_precip)
 
+
 #Making models adding treatment
 richmod_treat_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
 richmod_treat_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
 richmod_treat_over_warm_adding_precip <-  glmer(richness ~ scale(precip) + warming * treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
 richmod_treat_over_warm_over_precip <-  glmer(richness ~ scale(precip) * warming * treatment + (1|site) + (1|overdisp_column), data = species_richness, family = poisson)
 
-
+anova(richmod_warm_and_precip, richmod_treat_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_treat_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_over_precip)
 
 
 richmod_precip_new <- glmer(richness ~ scale(precip) + warming + (1|new_site) + (1|overdisp_column), data = species_richness, family = poisson)
