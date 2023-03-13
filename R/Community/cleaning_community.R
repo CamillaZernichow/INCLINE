@@ -856,28 +856,35 @@ total_cover <- community_clean |>
          total_poo_cover = sum(poo, na.rm = TRUE) / 29,
          total_rock_cover = sum(rock, na.rm = TRUE) / 29,
          total_fungus_cover = sum(fungus, na.rm = TRUE) / 29) |>
-  mutate(total_bryophyte_cover = case_when(total_bryophyte_cover == 0 ~ NA,
+  mutate(total_bryophyte_cover = case_when(is.na(total_bryophyte_cover) ~ NA_real_,
+                                            total_bryophyte_cover == 0 ~ NA_real_,
                                            total_bryophyte_cover < 1 ~ 1,
                                            total_bryophyte_cover > 0 ~ round(total_bryophyte_cover, digits = 0)),
-         total_litter_cover = case_when(total_litter_cover == 0 ~ NA,
+         total_litter_cover = case_when(is.na(total_litter_cover) ~ NA_real_,
+                                         total_litter_cover == 0 ~ NA_real_,
                                         total_litter_cover < 1 ~ 1,
                                         total_litter_cover > 0 ~ round(total_litter_cover, digits = 0)),
-         total_lichen_cover = case_when(total_lichen_cover == 0 ~ NA,
+         total_lichen_cover = case_when( is.na(total_lichen_cover) ~ NA_real_,
+                                         total_lichen_cover == 0 ~ NA_real_,
                                         total_lichen_cover < 1 ~ 1,
                                         total_lichen_cover > 0 ~ round(total_lichen_cover, digits = 0)), 
-         total_bare_ground_cover = case_when(total_bare_ground_cover == 0 ~ NA,
+         total_bare_ground_cover = case_when(is.na(total_bare_ground_cover) ~ NA_real_,
+                                              total_bare_ground_cover == 0 ~ NA_real_,
                                              total_bare_ground_cover < 1 ~ 1,
                                              total_bare_ground_cover > 0 ~ round(total_bare_ground_cover, digits = 0)), 
-         total_poo_cover = case_when(total_poo_cover == 0 ~ NA,
+         total_poo_cover = case_when(is.na(total_poo_cover) ~ NA_real_,
+                                      total_poo_cover == 0 ~ NA_real_,
                                      total_poo_cover < 1 ~ 1,
                                      total_poo_cover > 0 ~ round(total_poo_cover, digits = 0)),
-         total_rock_cover = case_when(total_rock_cover == 0 ~ NA,
+         total_rock_cover = case_when(is.na(total_rock_cover) ~ NA_real_,
+                                       total_rock_cover == 0 ~ NA_real_,
                                       total_rock_cover < 1 ~ 1,
                                       total_rock_cover > 0 ~ round(total_rock_cover, digits = 0)),
-         total_fungus_cover = case_when(total_fungus_cover == 0 ~ NA,
+         total_fungus_cover = case_when(is.na(total_fungus_cover) ~ NA_real_,
+                                         total_fungus_cover == 0 ~ NA_real_,
                                         total_fungus_cover < 1 ~ 1,
                                         total_fungus_cover > 0 ~ round(total_fungus_cover, digits = 0))) |>
-  select( -c( moss, measure, poo, lichen, litter, rock, fungus, bare_ground))
+  select( -c(moss, measure, poo, lichen, litter, rock, fungus, bare_ground))
 
 vegetation_height_and_moss_depth_mean <- community_clean |>
   select(plotID, subPlot, year, vegetation_height_mm, moss_depth_mm)|>
@@ -890,11 +897,14 @@ vegetation_height_and_moss_depth_mean <- community_clean |>
   mutate(moss_depth_mean = round(moss_depth_mean, digits = 0)) |>
   ungroup() |>
   unique()
+
 community_clean <- community_clean |>
   left_join(total_cover, by = c("subPlot","plotID", "year"))|>
   left_join(vegetation_height_and_moss_depth_mean, by = c("plotID", "year")) |>
   unique() #removing any duplicates from the renaming process (if there was already a Car_big in the subplot and we renamed Car_sp tp Car_big for example)
+
 write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv",row.names= FALSE)
+
 community_clean_subplot <- community_clean |>
   filter(measure == "subPlot") |>
   select("site", "plotID", "warming", "treatment", "year", "date",
@@ -903,6 +913,7 @@ community_clean_subplot <- community_clean |>
          "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species",
          "value", "presence", "fertile", "dominance", "juvenile", "seedling") |>
   unique()
+
 community_clean_species_cover <- community_clean |>
   select("site", "plotID", "warming", "treatment", "year", "date",
          "date_comment", "recorder", "writer", "weather", "functional_group", "species",
@@ -910,10 +921,11 @@ community_clean_species_cover <- community_clean |>
   unique()
 
 community_clean_plotlevel_info <- community_clean |>
+  filter(!value %in% c("O", "OF", "FO", "OJ")) |>
   select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
          "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
          "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
-  unique() 
+  unique()
 
 write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover.csv",row.names= FALSE)
 write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
@@ -927,3 +939,9 @@ write.csv(community_clean_subplot, file = "INCLINE_community_plotlevel_info.csv"
 #read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
 
 #read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
+
+#Gammel kode#community_clean_plotlevel_info <- community_clean |>
+  #select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
+   #      "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
+  #       "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
+  #unique() 
