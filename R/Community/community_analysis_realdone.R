@@ -4,6 +4,8 @@ source(here::here("R/Community", "cleaning_community.R")) #Finn ut av
 #####Community analysis######
 #############################
 
+#Testing to fixed the saving on github problem
+
 #For this master thesis we want to investigate species richness and species evenness to see if the community changes when warming and new biotic interactions are implemented in a already relative stable system. The reason for this, is to see how drastic changes we can expect in the alpine due to accelerating climate warming, and to see how fast we can expact them to occure.
 #We also want to investigate specifically what effect the different treatments have on the alpine plant community and are using ordinations to investegate patterns. 
 
