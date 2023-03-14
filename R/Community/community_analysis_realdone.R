@@ -1,8 +1,11 @@
-source(here::here("R/Community", "cleaning_community.R")) #Finn ut av
+source("R/Community", "cleaning_community.R") #Finn ut av
 
 #############################
 #####Community analysis######
 #############################
+#Libraries used for analysis
+library(lme4)
+library(lmerTest)
 
 #Testing to fixed the saving on github problem
 
@@ -35,11 +38,13 @@ the_communities <- community_clean |>
   filter(!duplicated(species))|>
   ungroup()
 
-#Making the communities ready for ordination. Removing unnecessary observations, filtering out rare species, making a new column that includes year, site and plotID. 
+#Making the communities ready for ordination. Removing unnecessary observations, filtering out rare species, making a new column that includes year, site and plotID. SJEKK DENNE MED RAGNHILD
 community_ordination <- the_communities|>
-  filter(n()>3, .by = species)|>
+  group_by(species)|>
+  filter(n()>3)|>
+  ungroup()|>
   mutate(plotIDyear = paste0(plotID, "_", year))|> #Making a new column that includes plotid and year
-  filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|> #Sal_sp removed since its rare, but are not removed when we removes the tre most rare species. 
+  filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|> #Sal_sp removed since its rare, but are not removed when we removes the three most rare species. 
   left_join(env, by = "plotID")|>
   rename(precip_2009_2019 = 'precipitation_2009-2019')|>
   select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip_2009_2019)|>
@@ -48,6 +53,11 @@ community_ordination <- the_communities|>
   mutate(transplant = ifelse(treatment %in% c("N", "E"), "transplant", "control"))|>
   mutate(novel = ifelse(treatment == "N", "novel", "other"))|>
   mutate(extant = ifelse(treatment == "E", "extant", "other"))
+
+###################################################################
+############Alt mellom her og neste kan være unødvendig############
+###################################################################
+
 #Community wider separated in locations. Removing all the unnecessary columns. Only species and the rows left.
 com_ord_skj <- community_ordination |>
   filter(site == "Skjellingahaugen")|>
@@ -125,13 +135,322 @@ com_ord_wide <- community_ordination|>
 ####################################
 ######Principal response curve######
 ####################################
-
+#We are going to do analysis on richness, evenness and the RDAs. Starting with making the RDA models
 
 
 ########################################
 #######RDA ordinations to the PRC#######
 ########################################
 
+#Starting with testing the predictors
+RDA_site <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ site, data = community_ordination)
+RDA_warm <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming, data = community_ordination)
+RDA_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ precip_2009_2019, data = community_ordination)
+
+#The eigenvalues we gets:
+#RDA_site = 9.359575
+#RDA_warm = 0.02753673
+#RDA_precip = 6.710349
+
+#Making a null model to test the different predictors alone
+null <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ 1 , data = community_ordination)
+
+#Taking an ANOVA test on the model and put it up against the null model. All values can be found in an external table
+anova(null, RDA_site) 
+anova(null, RDA_warm) 
+anova(null, RDA_precip)
+
+#We choose to go further with the precipiation. The sites are explaining the most variation however the precipitation also explain a lot of the variation found at the sites. We do this same process for each variable. And test if we want to include the interaction or not
+
+#__________Site vs warm__________#
+
+RDA_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming * precip_2009_2019, data = community_ordination)
+
+RDA_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ warming + precip_2009_2019, data = community_ordination) #Hør med Ragnhild
+
+anova(RDA_warm_and_precip, RDA_warm_over_precip)
+anova(RDA_precip, RDA_warm_over_precip)
+anova(RDA_warm, RDA_warm_over_precip)
+
+#__________Including transplants__________#
+
+RDA_transplant_adding_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant + warming * precip_2009_2019, data = community_ordination)
+#Eigenval = 6.737078
+RDA_transplant_over_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ transplant * warming * precip_2009_2019, data = community_ordination)
+#Eigenval = 6.742093
+
+anova(RDA_warm_over_precip, RDA_transplant_adding_warm_over_precip) #0.019*
+anova(RDA_warm_over_precip, RDA_transplant_over_warm_and_precip) #0.026*
+anova(RDA_transplant_adding_warm_over_precip, RDA_transplant_over_warm_and_precip) #Ikke ta interaksjonen
+
+#__________ Adding to see if there is a difference between novel and extant __________#
+RDA_warm_and_precip_added_treatment <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ treatment + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_treatment <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ treatment * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_over_precip, RDA_warm_and_precip_added_treatment) #0.008**, Eigenval = 6.737166
+anova(RDA_warm_over_precip, RDA_warm_and_precip_and_treatment) #0.001***, Eigenval = 6.747975
+anova(RDA_warm_and_precip_added_treatment, RDA_warm_and_precip_and_treatment) #0.011*
+
+RDA_warm_and_precip_added_extant <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ extant + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_extant <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ extant * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_over_precip, RDA_warm_and_precip_added_extant)
+anova(RDA_warm_over_precip, RDA_warm_and_precip_and_extant)
+anova(RDA_warm_and_precip_added_extant, RDA_warm_and_precip_and_extant)
+
+RDA_warm_and_precip_added_novel <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ novel + warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_and_novel <- rda(sqrt(community_ordination[, -c(1:7, 87:89)]) ~ novel * warming * precip_2009_2019, data = community_ordination)
+
+anova(RDA_warm_and_precip, RDA_warm_and_precip_added_novel)
+anova(RDA_warm_and_precip, RDA_warm_and_precip_and_novel)
+anova(RDA_warm_and_precip_added_novel, RDA_warm_and_precip_and_novel)
+
+#_________________PRC___________________#
+
+community_ordination$warming <- factor(community_ordination$warming)
+community_ordination$year <- factor(community_ordination$year)
+community_ordination$treatment <- factor(community_ordination$treatment)
+
+
+RDA_transplant_over_warm_and_precip_test <- as.matrix(RDA_transplant_over_warm_and_precip)
+
+
+mod <- prc(community_ordination[, -c(1:7, 87:89)], community_ordination$treatment, community_ordination$year)
+mod
+
+summary(mod)
+
+logabu <- colSums(community_ordination[, -c(1:7, 87:89)])
+plot(mod, select = logabu > 100)
+
+###########################################
+##############Richness models##############
+###########################################
+
+#To make the richness models we need to make a dataframe that includes species richness
+
+
+#Species richness
+species_richness <- community_clean |>
+  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|>
+  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|>
+  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>
+  select(-subPlot)|>
+  mutate(cover = as.numeric(cover))|>
+  mutate(year = as.numeric(year))|>
+  group_by(site, year, species, warming, treatment)|>
+  mutate(treat = paste0(warming, "_", treatment)) |>
+  filter(!treatment %in% c("R"))|>
+  mutate(treat = recode(treat, "W_C" = "Warm\nControl"))|>
+  mutate(treat = recode(treat, "W_N" = "Warm\nNovel"))|>
+  mutate(treat = recode(treat, "C_C" = "Cold\nControl"))|>
+  mutate(treat = recode(treat, "C_N" = "Cold\nNovel"))|>
+  mutate(treat = recode(treat, "C_E" = "Cold\nExtant"))|>
+  mutate(treat = recode(treat, "W_E" = "Warm\nExtant"))|>
+  mutate(pres = case_when(
+    cover > 0  ~ 1, 
+    is.na(cover) ~ 0)) |>
+  ungroup()|>
+  group_by(plotID, year)|>
+  filter(!duplicated(species))|>
+  select(-species)|>
+  mutate(richness = sum(pres, na.rm = TRUE)) |>
+  ungroup()|>
+  select(-cover, -pres) |>
+  unique()|>
+  group_by(site, year, treat) |>
+  mutate(treat_richness = mean(richness))|>
+  ungroup()
+
+#___________________________________#
+#Need block to make new site: Therefore takes the block info from community_data and combine it by plotID to species_richness
+block_cloumn <- community_data|>
+  select(plotID, block)|> 
+  unique()
+
+species_richness <- species_richness|>
+  left_join(env, by = "plotID")|>
+  rename("precip" = "precipitation_2009-2019") |>
+  left_join(block_cloumn, by = "plotID")|>
+  filter(year == 2022)|>
+  mutate(new_site = paste0(substr(site, 1,3), "_", block)) |>
+  mutate(precip = as.numeric(precip, na.rm = TRUE)) 
+  #mutate(overdisp_column = 1:nrow(species_richness))
+
+#________Making the models________#
+
+#Starting with making a null model so we can test the predictors alone
+
+null <- glmer(richness ~ 1 + (1|site), data = species_richness, family = poisson)
+
+richmod_precip <-  glmer(richness ~ scale(precip) + (1|site), data = species_richness, family = poisson)
+
+anova(null, richmod_precip)
+
+#Also checking warming and site separated as well
+richmod_warm <- glmer(richness ~ warming + (1|site), data = species_richness, family = poisson)
+richmod_site <- glmer(richness ~ site + (1|site), data = species_richness, family = poisson) #Do not think this is right, however its easy to remove if neccesary
+
+anova(null, richmod_warm)
+anova(null, richmod_site)
+
+#__________Testing precip up against warming__________#
+
+richmod_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + (1|site), data = species_richness, family = poisson)
+richmod_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_precip, richmod_warm_and_precip)
+anova(richmod_precip, richmod_warm_over_precip)
+anova(richmod_warm_and_precip, richmod_warm_over_precip)
+
+#__________Adding treatment__________#
+#Making models adding treatment
+richmod_treat_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_adding_precip <-  glmer(richness ~ scale(precip) + warming * treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_over_precip <-  glmer(richness ~ scale(precip) * warming * treatment + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_treat_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_treat_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_over_precip)
+
+#__________Adding novel and extant__________#
+richmod_novel_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + novel + (1|site), data = species_richness, family = poisson)
+richmod_treat_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + novel + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_adding_precip <-  glmer(richness ~ scale(precip) + warming * novel + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_over_precip <-  glmer(richness ~ scale(precip) * warming * novel + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_novel_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_novel_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_novel_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_novel_over_warm_over_precip)
+
+richmod_extant_warm_and_precip <-  glmer(richness ~ scale(precip) + warming + extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_warm_over_precip <-  glmer(richness ~ scale(precip) * warming + extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_over_warm_adding_precip <-  glmer(richness ~ scale(precip) + warming * extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_over_warm_over_precip <-  glmer(richness ~ scale(precip) * warming * extant + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_extant_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_extant_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_extant_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_extant_over_warm_over_precip)
+
+##################################
+##########Evenness model##########
+##################################
+
+species_evenness <- community_clean |>
+  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|>
+  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|>
+  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>
+  select(-subPlot)|>
+  mutate(cover = as.numeric(cover))|>
+  mutate(year = as.numeric(year))|>
+  filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|>
+  group_by(site, year, species, warming, treatment)|>
+  mutate(treat = paste0(warming, "_", treatment)) |>
+  filter(!treatment %in% c("R"))|>
+  mutate(treat = recode(treat, "W_C" = "Warm\nControl"))|>
+  mutate(treat = recode(treat, "W_N" = "Warm\nNovel"))|>
+  mutate(treat = recode(treat, "C_C" = "Cold\nControl"))|>
+  mutate(treat = recode(treat, "C_N" = "Cold\nNovel"))|>
+  mutate(treat = recode(treat, "C_E" = "Cold\nExtant"))|>
+  mutate(treat = recode(treat, "W_E" = "Warm\nExtant"))|>
+  ungroup()|>
+  group_by(plotID, year)|>
+  filter(!duplicated(species))
+mutate(richness = sum(pres, na.rm = TRUE)) |> 
+  ungroup()|>
+  select(-cover, -pres) |>
+  unique()|>
+  group_by(site, year, treat) |>
+  mutate(treat_richness = mean(richness))|>
+  ungroup()
+
+species_evenness <- species_evenness|>
+  left_join(env, by = "plotID")|>
+  rename("precip" = "precipitation_2009-2019") |>
+  left_join(block_cloumn, by = "plotID")
+
+#Only this is neccesary?#
+evenness <- eventstar(com_ord_wide)
+
+comp_data<-merge(evenness,community_ordination, by='row.names',all=TRUE)|>
+  select(-c(Hstar,Dstar,qstar))
+
+species_evenness <- comp_data|>
+  group_by(site,year,treat)|>
+  mutate(treat_evenness = mean(Estar))|>
+  ungroup()|>
+  filter(year == 2022) |>
+  rename(evenness = "Estar" ) |>
+  rename(precip = "precip_2009_2019")
+
+
+hist(species_evenness$treat_evenness)
+
+#Standardise the precip variable
+species_evenness$precip_scaled <- scale(species_evenness$precip)
+
+#_______________________________#
+null <- lmer(evenness ~ 1 + (1|site), data = species_evenness)
+
+evenmod_precip <- lmer(evenness ~ precip_scaled + (1 | site), data = species_evenness)
+
+anova(null, evenmod_precip)
+
+#Also checking warming and site separated as well
+evenmod_warm <- lmer(evenness ~ warming + (1|site), data = species_evenness)
+evenmod_site <- lmer(evenness ~ site + (1|site), data = species_evenness) #Do not think this is right, however its easy to remove if neccesary
+
+anova(null, evenmod_warm)
+anova(null, evenmod_site)
+
+#__________Testing precip up against warming__________#
+
+evenmod_warm_and_precip <-  lmer(evenness ~ scale(precip) + warming + (1|site), data = species_evenness)
+evenmod_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming + (1|site), data = species_evenness)
+
+anova(evenmod_precip, evenmod_warm_and_precip)
+anova(evenmod_precip, evenmod_warm_over_precip)
+anova(evenmod_warm_and_precip, evenmod_warm_over_precip)
+
+#__________Adding treatment__________#
+#Making models adding treatment
+evenmod_treat_warm_and_precip <- lmer(evenness ~ scale(precip) + warming + treatment + (1|site), data = species_evenness)
+evenmod_treat_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming + treatment + (1|site), data = species_evenness)
+evenmod_treat_over_warm_adding_precip <-  lmer(evenness ~ scale(precip) + warming * treatment + (1|site), data = species_evenness)
+evenmod_treat_over_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming * treatment + (1|site), data = species_evenness)
+
+anova(evenmod_warm_and_precip, evenmod_treat_warm_and_precip)
+anova(evenmod_warm_and_precip, evenmod_treat_warm_over_precip)
+anova(evenmod_warm_over_precip, evenmod_treat_over_warm_adding_precip)
+anova(evenmod_warm_over_precip, evenmod_treat_over_warm_over_precip)
+
+#__________Adding novel and extant__________#
+evenmod_novel_warm_and_precip <-  lmer(evenness ~ scale(precip) + warming + novel + (1|site), data = species_evenness)
+evenmod_novel_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming + novel + (1|site), data = species_evenness)
+evenmod_novel_over_warm_adding_precip <-  lmer(evenness ~ scale(precip) + warming * novel + (1|site), data = species_evenness)
+evenmod_novel_over_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming * novel + (1|site), data = species_evenness)
+
+anova(evenmod_warm_and_precip, evenmod_novel_warm_and_precip)
+anova(evenmod_warm_and_precip, evenmod_novel_warm_over_precip)
+anova(evenmod_warm_over_precip, evenmod_novel_over_warm_adding_precip)
+anova(evenmod_warm_over_precip, evenmod_novel_over_warm_over_precip)
+
+evenmod_extant_warm_and_precip <-  lmer(evenness ~ scale(precip) + warming + extant + (1|site), data = species_evenness)
+evenmod_extant_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming + extant + (1|site), data = species_evenness)
+evenmod_extant_over_warm_adding_precip <-  lmer(evenness ~ scale(precip) + warming * extant + (1|site), data = species_evenness)
+evenmod_extant_over_warm_over_precip <-  lmer(evenness ~ scale(precip) * warming * extant + (1|site), data = species_evenness)
+
+anova(evenmod_warm_and_precip, evenmod_extant_warm_and_precip)
+anova(evenmod_warm_and_precip, evenmod_extant_warm_over_precip)
+anova(evenmod_warm_over_precip, evenmod_extant_over_warm_adding_precip)
+anova(evenmod_warm_over_precip, evenmod_extant_over_warm_over_precip)
+
+
+#__________________________________________________#
 #Kjør nullmodell på alle prediktorene først. Ta ut tid. Interressert om det har en effekt. 
 
 #---------------------Site vs time ---------------------
@@ -511,8 +830,7 @@ p_vio <- base + geom_violin(aes(x = treat, y = richness,fill = treatment))
 p_vio + stat_summary(fun = mean, geom = "point", shape = 1, size = 1)
 
 ####Testing richness ####
-library(lme4)
-library(lmerTest)
+
 
 
 #GLM på begge
