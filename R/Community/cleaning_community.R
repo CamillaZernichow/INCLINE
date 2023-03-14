@@ -44,6 +44,7 @@ community_data_download <- read_delim("data\\INCLINE_community_2018_2019_2021_20
 #Meta data
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta data to fill in the missing part of the treatment and OTC column for 2018.
 
+#Name dictionary
 name_dictionary <- read_delim("data\\INCLINE_community_name_dictionary.csv")
 
 ########################################## Fixing mistakes in the dataset ##########################################
