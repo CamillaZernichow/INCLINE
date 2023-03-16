@@ -835,7 +835,7 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover)) #Fes_ovi did not have a cover in 2019, it was only present in one subplot therefore it gets a 1 in cover.
 
 community_clean <- community_clean|>
-  mutate(functional_group = ifelse(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul"), "Forbs", species))|>
+  mutate(functional_group = ifelse(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul", "Hie_pil"), "Forbs", species))|>
   mutate(functional_group = ifelse(species %in% c( "Nar_str", "Agr_mer", "Agr_cap", "Car_big", "Car_nor", "Car_cap", "Car_pal", "Car_pil", "Poa_pra", "Car_vag", "Ave_fle", "Des_ces", "Poa_alp", "Jun_tri", "Phl_alp", "Fes_ovi", "Fes_rub", "Sau_alp", "Fes_sp" ,"Car_sp", "Ant_dio", "Fes_viv", "Des_alp", "Car_fla", "Car_sax", "Ant_sp", "Car_atr" ), "Graminoids", functional_group))|>
   mutate(functional_group = ifelse(species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan"), "Deciduous_shrubs", functional_group))|>
   mutate(functional_group = ifelse(species %in% c("Emp_nig", "Vac_vit", "Cal_vul"), "Evergreen_shrubs", functional_group))
@@ -857,32 +857,32 @@ total_cover <- community_clean |>
          total_poo_cover = sum(poo, na.rm = TRUE) / 29,
          total_rock_cover = sum(rock, na.rm = TRUE) / 29,
          total_fungus_cover = sum(fungus, na.rm = TRUE) / 29) |>
-  mutate(total_bryophyte_cover = case_when(is.na(total_bryophyte_cover) ~ NA_real_,
-                                            total_bryophyte_cover == 0 ~ NA_real_,
+  mutate(total_bryophyte_cover = case_when(is.na(total_bryophyte_cover) ~ 0,
+                                            total_bryophyte_cover == 0 ~ 0,
                                            total_bryophyte_cover < 1 ~ 1,
                                            total_bryophyte_cover > 0 ~ round(total_bryophyte_cover, digits = 0)),
-         total_litter_cover = case_when(is.na(total_litter_cover) ~ NA_real_,
-                                         total_litter_cover == 0 ~ NA_real_,
+         total_litter_cover = case_when(is.na(total_litter_cover) ~ 0,
+                                         total_litter_cover == 0 ~ 0,
                                         total_litter_cover < 1 ~ 1,
                                         total_litter_cover > 0 ~ round(total_litter_cover, digits = 0)),
-         total_lichen_cover = case_when( is.na(total_lichen_cover) ~ NA_real_,
-                                         total_lichen_cover == 0 ~ NA_real_,
+         total_lichen_cover = case_when( is.na(total_lichen_cover) ~ 0,
+                                         total_lichen_cover == 0 ~ 0,
                                         total_lichen_cover < 1 ~ 1,
                                         total_lichen_cover > 0 ~ round(total_lichen_cover, digits = 0)), 
-         total_bare_ground_cover = case_when(is.na(total_bare_ground_cover) ~ NA_real_,
-                                              total_bare_ground_cover == 0 ~ NA_real_,
+         total_bare_ground_cover = case_when(is.na(total_bare_ground_cover) ~ 0,
+                                              total_bare_ground_cover == 0 ~ 0,
                                              total_bare_ground_cover < 1 ~ 1,
                                              total_bare_ground_cover > 0 ~ round(total_bare_ground_cover, digits = 0)), 
-         total_poo_cover = case_when(is.na(total_poo_cover) ~ NA_real_,
-                                      total_poo_cover == 0 ~ NA_real_,
+         total_poo_cover = case_when(is.na(total_poo_cover) ~ 0,
+                                      total_poo_cover == 0 ~ 0,
                                      total_poo_cover < 1 ~ 1,
                                      total_poo_cover > 0 ~ round(total_poo_cover, digits = 0)),
-         total_rock_cover = case_when(is.na(total_rock_cover) ~ NA_real_,
-                                       total_rock_cover == 0 ~ NA_real_,
+         total_rock_cover = case_when(is.na(total_rock_cover) ~ 0,
+                                       total_rock_cover == 0 ~ 0,
                                       total_rock_cover < 1 ~ 1,
                                       total_rock_cover > 0 ~ round(total_rock_cover, digits = 0)),
-         total_fungus_cover = case_when(is.na(total_fungus_cover) ~ NA_real_,
-                                         total_fungus_cover == 0 ~ NA_real_,
+         total_fungus_cover = case_when(is.na(total_fungus_cover) ~ 0,
+                                         total_fungus_cover == 0 ~ 0,
                                         total_fungus_cover < 1 ~ 1,
                                         total_fungus_cover > 0 ~ round(total_fungus_cover, digits = 0))) |>
   select( -c(moss, measure, poo, lichen, litter, rock, fungus, bare_ground))
@@ -908,6 +908,7 @@ write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\M
 
 community_clean_subplot <- community_clean |>
   filter(measure == "subPlot") |>
+  filter(subPlot != 9)|>
   select("site", "plotID", "warming", "treatment", "year", "date",
          "date_comment", "recorder", "writer", "weather", "subPlot","moss",
          "lichen", "litter", "rock", "poo", "fungus", "bare_ground",
@@ -922,7 +923,7 @@ community_clean_species_cover <- community_clean |>
   unique()
 
 community_clean_plotlevel_info <- community_clean |>
-  filter(!value %in% c("O", "OF", "FO", "OJ")) |>
+  filter(subPlot != 9) |>
   select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
          "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
          "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
@@ -930,7 +931,7 @@ community_clean_plotlevel_info <- community_clean |>
 
 write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover.csv",row.names= FALSE)
 write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
-write.csv(community_clean_subplot, file = "INCLINE_community_plotlevel_info.csv",row.names= FALSE)
+write.csv(community_clean_plotlevel_info, file = "INCLINE_community_plotlevel_info.csv",row.names= FALSE)
 
 #Navn på osf = INCLINE_community
 
