@@ -3,17 +3,11 @@
 ##########################################################
 
 ##### Loading libraries #####
-library(osfr)
-library(pipebind)
 library(tidyverse)
 library(lubridate)
-#library(turfmapper)
 library(dataDownloader)
-library(dplyr)
-library(vegan)
-library(ggvegan)
-library(gridExtra)
-library(here)
+library(osfr) #To download the data from OSF we need this library to get the function osf_auth
+
 
 #Use your OSF token to get excess to osf. From here you can download neccesary files
 #osf_auth(token = "")#Your personal OSF token
@@ -36,10 +30,10 @@ get_file(node = "zhk3m",
          path = "data",
          remote_path = "RawData/Community")
 
+
 ##### Reading in data #####
 #Community data
 community_data_download <- read_delim("data\\INCLINE_community_2018_2019_2021_2022.csv", col_types = cols(.default = col_character()))
-
 
 #Meta data
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta data to fill in the missing part of the treatment and OTC column for 2018.
@@ -47,7 +41,8 @@ meta_data_download <- read_delim("data\\INCLINE_metadata.csv") #Need the meta da
 #Name dictionary
 name_dictionary <- read_delim("data\\INCLINE_community_name_dictionary.csv")
 
-########################################## Fixing mistakes in the dataset ##########################################
+
+####___________Fixing general mistakes in the dataset___________####
 ###### Cleaning variables in dataset ######
 #For it to be easier to work with the data, all the names will be standardized after the same rules.The general rule will be capital letter on the specie name with an underscore to the surname and an underscore to cf if they have a cf at the end. All columns that have a name with space, gets a underscore instead for space. All other names that arent species gets small letters instead of capital letters. I recently learned that it is a code you can use that will fix all these problems automatic. By renaming the columns we dont need to think of their unique names when working with the data. Also fixed general mistakes like making the columns numeric, og to data after what it should be.
 
@@ -83,13 +78,11 @@ community_data <- community_data_download |>
   mutate(date = ifelse(date == "30.07.2021/02.08.2021", "30.07.2021", date)) |>
   mutate(date = dmy(date))
   
-  
-  
 #meta data
 meta_data <- meta_data_download|>
   select(plotID, OTC, treatment) #selecting relevant variables from the meta data
 
-##### Combining community data and meta data and translating names #####
+#__________Combining community data and meta data and translating names__________#
 # The first year the data was collected, we didn't register the treatment. Therefor by combining the community data and meta data, we will get the missing information. We are also putting in plotID as a new variable that is easier to work with than separated block and plot information. 
 
 community_data <- community_data |>
@@ -103,7 +96,7 @@ community_data <- community_data |>
   rename(writer = name)
 
 
-##### Turfmapper #####
+#__________ Turfmapper __________#
 # To continuing cleaning the large dataset, one of our group members have made a turfmap where we can analyse the yearly changes for each specie in each plot. All the colored subplots represent the observations, and the green color changes based on the species cover for each year. The turfmapper plotting code can be found in the community_turfmapper.R script
 
 #Making data ready for turfmapper by widening the data
@@ -123,6 +116,7 @@ community_data_longer <- community_data_longer |>
   mutate(dominance = case_when(dominance == "TRUE" ~ value)) |> #In theory Sibbaldia procumbens (Sib_pro) and Veronica alpina (Ver_alp) should have registered dominance in all plots at Skjellingahaugen every year. Which means that 1 = 0-25% cover in the subplot, 2 = 25-50%, 3 = 50-75% and 4 = 75-100%. So with this coding we are missing out on the 0-25% information for those species. However, the problem is that I can't be sure if people usde 1 as a dominance or a cover value. For plots where there are 2, 3 and 4s we know that 1s means dominance. Could be coded in somehow.
   mutate(presence = case_when(presence == "TRUE" ~ 1)) 
 
+#_______ Making columns that needs to be merged in to the dataset _______#
 #Making a new variable called cover
 cover_column <- community_data_longer|>
   filter(measure == "cover" )|>
@@ -151,17 +145,13 @@ community_clean <-  community_data_longer |>
   filter(subPlot != "cover")
 
 
-# To get the data ready for turfmapper the whole plot information "plot" in "measure" needs to be recoded to have the value 1 in the measure column. "plot" also needs to be filtered out in the subPlot column. This is done in seperate code.
+# To get the data ready for turfmapper the wholeplot information "plot" in "measure" needs to be recoded to have the value 1 in the measure column. "plot" also needs to be filtered out in the subPlot column. This is done in seperate code.
+
+#_______Turf mapper process happens here, see script for the code_______#
 
 
 
-#################################################################################
-######     Turf mapper process happens here, see script for the code       ######
-#################################################################################
-
-
-
-#### Cleaning mistakes from dataset based on turfmapper evaluation ####
+####__________Cleaning mistakes from dataset based on turfmapper evaluation__________####
 #Several typing mistakes occurred when making the dataset. Therefor, we standardise again the rest of typing mistakes for the different species so its easier to work on when cleaning the data.
 #General coding for all plots
 community_clean <- community_clean |>
@@ -192,9 +182,9 @@ community_clean <- community_clean |>
 
 # - You can also put in "year ==" in when merging columns. Good to use when you have unknown species of cf that you want to split.
 
-#####Skjellingahaugen#####
+###### Skjellingahaugen ######
 
-community_clean <- community_clean |> #Legg inn at vi må dobbelstjekke agr_mer og agr_cap i felt 2023.
+community_clean <- community_clean |> #Doubble check agr_mer and agr_cap in field 2023.
   mutate(species = ifelse(species == "Agr_mer" & plotID == "Skj_1_1" & year %in% c(2018, 2021), "Agr_cap", species))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_1_1" & year == 2018, 4, cover))|>
   mutate(cover = ifelse(species == "Agr_cap" & plotID == "Skj_1_1" & year == 2021, 5, cover ))|>
@@ -204,7 +194,7 @@ community_clean <- community_clean |> #Legg inn at vi må dobbelstjekke agr_mer 
   mutate(species = ifelse(species == "Pyr_sp" & plotID == "Skj_1_1", "Pin_vul", species)) |>
   mutate(species = ifelse(species == "Ran_acr_cf" & plotID == "Skj_1_1", "Ran_acr", species)) |>
   mutate(species = ifelse(species == "Sib_pro_cf" & plotID == "Skj_1_1", "Sib_pro", species))|>
-  mutate(cover = ifelse(species == "Sib_pro" & plotID == "Skj_1_1" & year == 2018, 4, cover)) |> #Sjekk turfmapper
+  mutate(cover = ifelse(species == "Sib_pro" & plotID == "Skj_1_1" & year == 2018, 4, cover)) |> #Check turfmapper
   mutate(species = ifelse(species %in% c("Car_big_cf", "Car_nor") & plotID == "Skj_1_3" & year == 2018, "Car_big", species)) |> 
   mutate(cover = ifelse(species == "Car_big" & plotID == "Skj_1_3" & year == 2018, 3, cover))|>
   mutate(species = ifelse(species %in% c("Agr_mer","Phl_alp") & plotID == "Skj_1_3", "Agr_cap", species))|>
@@ -352,7 +342,7 @@ community_clean <- community_clean |> #Legg inn at vi må dobbelstjekke agr_mer 
   mutate(cover = ifelse(species == "Ant_odo" & plotID == "Skj_7_2" & year == 2022, 4, cover))|>
   mutate(species = ifelse(species == "Car_cap" & plotID == "Skj_7_5" & year == 2021, "Car_big", species))
 
-#####Gudmeddalen#####
+###### Gudmeddalen ######
 
 community_clean <- community_clean|>
   mutate(species = ifelse(species == "Car_sp" & plotID == "Gud_1_2" & year == 2019, "Car_big", species))|>
@@ -476,7 +466,7 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(species == "Ant_odo" & plotID == "Gud_7_6" & year == 2019, 6, cover))|>
   mutate(cover = ifelse(species == "Tar_sp" & plotID == "Gud_7_6" & year == 2019, 1,cover))
 
-#####Lavisdalen#####
+###### Lavisdalen ######
 
 community_clean <- community_clean |>
   mutate(species = ifelse(species == "Agr_cap_cf" & plotID == "Lav_1_1", "Agr_cap", species))|>
@@ -674,7 +664,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Luz_spi" & plotID == "Lav_7_2", "Luz_mul", species))|>
   mutate(species = ifelse(species == "Poa_alp" & plotID == "Lav_7_2", "Poa_pra", species))
   
-#####Ulvehaugen#####
+###### Ulvehaugen ######
 
 community_clean <- community_clean |>
   mutate(species = ifelse(species == "Vio_sp" & plotID == "Ulv_1_1", "Vio_bif", species))|>
@@ -816,8 +806,8 @@ community_clean <- community_clean |>
   mutate(cover = ifelse(species == "Ach_mil" & plotID == "Ulv_7_4" & year == 2019 & is.na(cover),0, cover))
 
 
-####Ulv_7_3 2018####
-#The Ulv_7_3 2018 plot lacks cover. To use the data, we have decided to give it approximatly the same cover as the year after
+###### Ulv_7_3 2018 ######
+#The Ulv_7_3 2018 plot lacks cover. To use the data, we have decided to give it the same cover as the year after
 
 #Making a dataset with the 2019 coverdata for the species in Ulv_7_3
 Ulv_7_3_2019 <- community_clean|>
@@ -835,10 +825,25 @@ community_clean <- community_clean|>
   mutate(cover = ifelse(species == "Fes_ovi" & plotID == "Ulv_7_3" & year == 2018, 1, cover)) #Fes_ovi did not have a cover in 2019, it was only present in one subplot therefore it gets a 1 in cover.
 
 community_clean <- community_clean|>
-  mutate(functional_group = ifelse(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul", "Hie_pil"), "Forbs", species))|>
-  mutate(functional_group = ifelse(species %in% c( "Nar_str", "Agr_mer", "Agr_cap", "Car_big", "Car_nor", "Car_cap", "Car_pal", "Car_pil", "Poa_pra", "Car_vag", "Ave_fle", "Des_ces", "Poa_alp", "Jun_tri", "Phl_alp", "Fes_ovi", "Fes_rub", "Sau_alp", "Fes_sp" ,"Car_sp", "Ant_dio", "Fes_viv", "Des_alp", "Car_fla", "Car_sax", "Ant_sp", "Car_atr" ), "Graminoids", functional_group))|>
-  mutate(functional_group = ifelse(species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan"), "Deciduous_shrubs", functional_group))|>
-  mutate(functional_group = ifelse(species %in% c("Emp_nig", "Vac_vit", "Cal_vul"), "Evergreen_shrubs", functional_group))
+  mutate(functional_group = case_when(species %in% c("Ant_odo", "Eup_wet", "Sib_pro", "Alc_alp", "Alc_sp", "Oma_sup", "Ver_alp", "Vio_pal", "Cam_rot", "Sag_sag", "Leo_aut", "Sel_sel", "Pyr_sp", "Luz_mul", "Tar_sp", "Pot_cra", "Dip_alp", "Tha_alp", "Lys_eur", "Hie_alp", "Rum_ace", "Cer_cer", "Epi_ana", "Equ_arv", "Epi_sp", "Tof_pus", "Nid_seedling", "Bar_alp", "Sil_aca", "Par_pal", "Hie_alp", "Cer_fon", "Pot_ere", "Vio_bif", "Coel_vir", "Ran_acr", "Gen_niv", "Pin_vul", "Eri_sp", "Ach_mil", "Pyr_min", "Bis_viv", "Ast_alp", "Rum_acl", "Bot_lun", "Gen_ama", "Ran_sp", "Oxy_dig", "Fern", "Ger_syl", "Geu_riv", "Rhi_min", "Hie_sp", "Tri_ces", "Hyp_sel", "Sol_vir", "Vio_can", "Ort_sec", "Pru_vul", "Ver_off", "Suc_pra", "Hyp_mac", "Ran_pyg", "Dry_oct", "Luz_spi", "Tri_rep", "Hyp_sp", "Ste_gra", "Sel_sp", "Vio_tri", "Ver_cha", "Nid_juvenile", "Gen_sp", "Tri_sp", "Oma_sp", "Cer_alp", "Tri_pra", "Sil_vul", "Sag_sp", "Phe_con", "Gym_dry", "Oma_nor", "Gal_sp", "Gen_cam", "Oxa_ace", "Lot_cor", "Aco_sep", "Eri_uni", "Equ_sci", "Sau_alp", "Leu_vul", "Hie_pil", "Vio_sp", "Gal_bor", "Lyc_alp") ~ "Forbs",
+                                      species %in% c( "Nar_str", "Agr_mer", "Agr_cap", "Car_big", "Car_nor", "Car_cap", "Car_pal", "Car_pil", "Poa_pra", "Car_vag", "Ave_fle", "Des_ces", "Poa_alp", "Jun_tri", "Phl_alp", "Fes_ovi", "Fes_rub", "Sau_alp", "Fes_sp" ,"Car_sp", "Ant_dio", "Fes_viv", "Des_alp", "Car_fla", "Car_sax", "Ant_sp", "Car_atr" ) ~ "Graminoids",
+                                      species %in% c("Sal_her", "Vac_myr", "Vac_uli", "Sal_sp", "Bet_nan", "Bet_pub", "Sal_lan") ~"Deciduous_shrubs",
+                                      species %in% c("Emp_nig", "Vac_vit", "Cal_vul", "Arc_urc") ~ "Evergreen_shrubs")) |>
+  group_by(plotID, year) |>
+  mutate(recorder = paste(unique(recorder), collapse = " & "),
+         writer = paste(unique(writer), collapse = " & ")) |>
+  ungroup() |>
+  group_by(plotID, subPlot, year, species) |>
+  mutate( #If any species have been duplicated (ex: changing Agr_mer to Agr_cap if there were already an Agr_cap in that plot), combine this information in value, fertile, seedling and juvenile.
+    value = paste(unique(value), collapse = ""),
+    fertile = any(fertile),
+    seedling = any(seedling),
+    juvenile = any(juvenile)) |>
+  ungroup() |>
+  group_by(plotID, year) |>
+  mutate(
+    date = min(date)) #If data collection was done over several days pick the first date.
+
 
 community_clean <- community_clean|>
   mutate(bare_ground = soil) |>
@@ -897,20 +902,21 @@ vegetation_height_and_moss_depth_mean <- community_clean |>
   mutate(vegetation_height_mean = round(vegetation_height_mean, digits = 0)) |>
   mutate(moss_depth_mean = round(moss_depth_mean, digits = 0)) |>
   ungroup() |>
-  unique()
+  unique() |>
+  mutate(vegetation_height_mean = ifelse(is.na(vegetation_height_mean), NA_real_, vegetation_height_mean),
+         moss_depth_mean = ifelse(is.na(moss_depth_mean), NA_real_, moss_depth_mean))
 
 community_clean <- community_clean |>
   left_join(total_cover, by = c("subPlot","plotID", "year"))|>
   left_join(vegetation_height_and_moss_depth_mean, by = c("plotID", "year")) |>
   unique() #removing any duplicates from the renaming process (if there was already a Car_big in the subplot and we renamed Car_sp tp Car_big for example)
 
-write.csv(community_clean, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv",row.names= FALSE)
 
+####______ Making the 3 final datasets that are cleaned and put out in OSF ______####
 community_clean_subplot <- community_clean |>
   filter(measure == "subPlot") |>
-  filter(subPlot != 9)|>
   select("site", "plotID", "warming", "treatment", "year", "date",
-         "date_comment", "recorder", "writer", "weather", "subPlot","moss",
+         "recorder", "writer", "subPlot","moss",
          "lichen", "litter", "rock", "poo", "fungus", "bare_ground",
          "logger", "vegetation_height_mm", "moss_depth_mm", "functional_group", "species",
          "value", "presence", "fertile", "dominance", "juvenile", "seedling") |>
@@ -918,16 +924,18 @@ community_clean_subplot <- community_clean |>
 
 community_clean_species_cover <- community_clean |>
   select("site", "plotID", "warming", "treatment", "year", "date",
-         "date_comment", "recorder", "writer", "weather", "functional_group", "species",
+         "recorder", "writer", "functional_group", "species",
          "cover") |>
   unique()
 
 community_clean_plotlevel_info <- community_clean |>
   filter(subPlot != 9) |>
-  select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
+  select("site", "plotID", "warming", "treatment", "year", "date",
+         "recorder", "writer", "vegetation_cover", "total_bryophyte_cover",
          "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
          "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
-  unique()
+  unique() |>
+  pivot_longer(cols = vegetation_cover:moss_depth_mean, names_to = "name", values_to = "value")
 
 write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover.csv",row.names= FALSE)
 write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
@@ -942,8 +950,3 @@ write.csv(community_clean_plotlevel_info, file = "INCLINE_community_plotlevel_in
 
 #read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
 
-#Gammel kode#community_clean_plotlevel_info <- community_clean |>
-  #select("site", "plotID", "warming", "treatment", "year", "date", "vegetation_cover", "total_bryophyte_cover",
-   #      "total_litter_cover", "total_lichen_cover", "total_bare_ground_cover",
-  #       "total_poo_cover", "total_rock_cover", "total_fungus_cover", "vegetation_height_mean", "moss_depth_mean") |>
-  #unique() 
