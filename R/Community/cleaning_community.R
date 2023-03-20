@@ -941,12 +941,4 @@ write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover
 write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
 write.csv(community_clean_plotlevel_info, file = "INCLINE_community_plotlevel_info.csv",row.names= FALSE)
 
-#Navn på osf = INCLINE_community
-
-#Teste med site, med site og block, og med new_site som inklduderer block
-
-
-#read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
-
-#read_csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community.csv")
 
