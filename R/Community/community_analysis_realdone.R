@@ -1,19 +1,20 @@
-#################################################
-#####          Community analysis          ######
-#################################################
+###############################################################################
+#####                         Community analysis                         ######
+###############################################################################
 
-#Libraries used for analysis
+#_____Libraries used for analysis_____#
 library(osfr) #To download the data from OSF we need this library to get the function osf_auth
 library(tidyverse)
 library(lubridate)
 library(dataDownloader)
-library(lme4)
 library(performance)
 library(vegan)
 library(ggvegan)
 library(gridExtra)
 library(glmmTMB)
 library(glmmTMBTest)
+
+#_____Downloading the cleaned data from OSF_____#
 
 #Use your OSF token to get excess to osf. From here you can download neccesary files
 #osf_auth(token = "")#Your personal OSF token
@@ -39,7 +40,7 @@ get_file(node = "zhk3m",
          path = "data",
          remote_path = "RawData")
 
-#Reding inn the data to the script. Needs the metadata to get precipitation information.
+#Reading inn the data to the script. Needs the metadata to get precipitation information.
 #Cleaned community data
 community_subplot_download <- read_delim("data\\INCLINE_community_subplot.csv")
 
@@ -50,27 +51,27 @@ community_cover_download <- read_delim("data\\INCLINE_community_species_cover.cs
 meta_data_download <- read_delim("data\\INCLINE_metadata.csv") 
 
 
-#For this master thesis we want to investigate species richness and species evenness to see if the community changes when warming and new biotic interactions are implemented in a already relative stable system. The reason for this, is to see how drastic changes we can expect in the alpine due to accelerating climate warming, and to see how fast we can expact them to occure.
-#We also want to investigate specifically what effect the different treatments have on the alpine plant community and are using ordinations to investegate patterns. 
+#_____Making the data ready to be used in the analysis_____#
+#For this master thesis we want to investigate species richness and species evenness to see if the community changes when warming and new biotic interactions are implemented in a already relative stable system. The reason for this, is to see how drastic changes we can expect in the alpine due to accelerating climate warming, and to see how fast we can expect them to occur.
+#We also want to investigate specifically what effect the different treatments have on the alpine plant community and are using ordinations to investigate patterns. 
 
-#Downloading some meta data and making an environment
+#Downloading some meta data and making an environment to have environment data 
 env <- meta_data_download|>
   select(plotID, `precipitation_2009-2019`)
 
-#Using the cleaned datasets as base. For this code we need both the subplot information and the cover information. Therefor we need to combine the two datasets agains, community_clean_subplot_download and community_clean_cover_download
+#Using the cleaned datasets as base. For this code we need both the subplot information and the cover information. Therefor we need to combine the two datasets community_subplot_download and community_cover_download
 
 community_analysis <- community_subplot_download |>
-  left_join(community_cover_download, by = c("site", "plotID", "warming", "treatment", "year", "date", "recorder", "writer", "functional_group", "species")) #Changes this to the names given them when downloading from the osf
+  left_join(community_cover_download, by = c("site", "plotID", "warming", "treatment", "year", "date", "recorder", "writer", "functional_group", "species"))
 
-
-#Making the community data ready for analysis with only subplots analysed in 2022. Remove replicas so that we only get one cover for each specie in each plotID.
+#Making the community data ready for analysis with selecting necessary columns, selecting only subplots analysed in 2022. Making a new column called treat that includes treatment and warming in same column. Remove replicas so that we only get one cover for each specie in each plotID.
 
 the_communities <- community_analysis |>
   select(site|plotID|warming|treatment|year|species|presence|cover|subPlot)|> #Select the columns we want to use.
-  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|> #Selects away the transplants species as these only function as a treatment and not a part of the original community.
-  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"plot"))|>#Selects away the subplots that are in the frame for the data to be comparable with the 2022 data.
+  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|> #Filter away the transplants species as these only function as a treatment and not a part of the original community.
+  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"plot"))|>#filter away the subplots that are in the frame for the data to be comparable with the 2022 data.
   select(-subPlot)|> #Removing the subplot column from the dataframe.
-  mutate(year = as.numeric(year))|>
+ # mutate(year = as.numeric(year))|>
   group_by(site, year, species, warming, treatment)|>
   mutate(treat = paste0(warming, "_", treatment)) |> #making a new column called treat that combines the warming treatment and the interaction treatment. 
   filter(!treatment %in% c("R"))|> #Removing the removal treatment as this is not relevant for the master. 
@@ -80,12 +81,235 @@ the_communities <- community_analysis |>
   mutate(treat = recode(treat, "C_N" = "Cold\nNovel"))|>
   mutate(treat = recode(treat, "C_E" = "Cold\nExtant"))|>
   mutate(treat = recode(treat, "W_E" = "Warm\nExtant"))|>
+  mutate(warming = recode(warming, "W" = "Warm"))|>
+  mutate(warming = recode(warming, "C" = "Cold"))|>
+  mutate(treatment = recode(treatment, "C" = "control"))|>
+  mutate(treatment = recode(treatment, "N" = "novel"))|>
+  mutate(treatment = recode(treatment, "E" = "extant"))|>
   ungroup()|>
   group_by(plotID, year)|>
   filter(!duplicated(species))|>
   ungroup()
 
-#Making the communities ready for ordination. Removing unnecessary observations, filtering out rare species, making a new column that includes year, site and plotID. 
+
+##############################################################################
+####                               Richness                               ####
+##############################################################################
+
+#Starting to make a general code that calculate the richness.
+#Calculating species richness
+species_richness <- community_analysis |>
+  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|> #Select the columns we want to use.
+  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|> #Filter away the transplants species as these only function as a treatment and not a part of the original community.
+  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"plot"))|>#filter away the subplots that are in the frame for the data to be comparable with the 2022 data.
+  select(-subPlot)|> #Removing the subplot column from the dataframe.
+  # mutate(year = as.numeric(year))|>
+  group_by(site, year, species, warming, treatment)|>
+  mutate(treat = paste0(warming, "_", treatment)) |> #making a new column called treat that combines the warming treatment and the interaction treatment. 
+  filter(!treatment %in% c("R")) |>#Removing the removal treatment as this is not relevant for the master. 
+  mutate(treat = recode(treat, "W_C" = "Warm\nControl"))|> #Recoding the names of the treat so its easier to understand what the different treatments are. 
+  mutate(treat = recode(treat, "W_N" = "Warm\nNovel"))|>
+  mutate(treat = recode(treat, "C_C" = "Cold\nControl"))|>
+  mutate(treat = recode(treat, "C_N" = "Cold\nNovel"))|>
+  mutate(treat = recode(treat, "C_E" = "Cold\nExtant"))|>
+  mutate(treat = recode(treat, "W_E" = "Warm\nExtant"))|>
+  mutate(warming = recode(warming, "W" = "Warm"))|>
+  mutate(warming = recode(warming, "C" = "Cold"))|>
+  mutate(treatment = recode(treatment, "C" = "control"))|>
+  mutate(treatment = recode(treatment, "N" = "novel"))|>
+  mutate(treatment = recode(treatment, "E" = "extant"))|>
+  ungroup()|>
+  group_by(plotID, year)|>
+  filter(!duplicated(species))|>
+  ungroup() |>
+  group_by(year, plotID) |>
+  mutate(transplant = ifelse(treatment %in% c("novel", "extant"), "transplant", "control"))|>
+  mutate(novel = ifelse(treatment == "novel", "novel", "other"))|>
+  mutate(extant = ifelse(treatment == "extant", "extant", "other"))|>
+  mutate(richness = sum(presence, na.rm = TRUE)) |>
+  ungroup()|>
+  select(-cover) |>
+  unique()|>
+  group_by(year, treatment) |>
+  mutate(treat_richness = mean(richness))|>
+  ungroup() |>
+  mutate(transplant = ifelse(treatment %in% c("novel", "extant"), "transplant", "control"))|>
+  left_join(env, by = "plotID")|>
+  rename(precip = 'precipitation_2009-2019')|>
+  select(year, warming, treatment, site, presence, plotID, treat, richness, transplant, novel, extant, treat_richness, precip) |>
+  unique()
+
+
+######_________________________ Richness figure _________________________######
+
+mod_richness_boxplot_1 <- species_richness |>
+  filter(year == c(2018, 2022))|>
+  ggplot(aes(x = treatment, y = richness)) +
+  geom_boxplot() + 
+  facet_grid(year ~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming))
+
+mod_richness_boxplot_1
+
+mod_richness_boxplot_2022 <- species_richness |>
+  filter(year == 2022) |>
+  ggplot(aes(x = treatment, y = richness)) +
+  geom_boxplot() + 
+  facet_grid(~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming))
+
+mod_richness_boxplot_2022
+
+mod_richness_boxplot_2018 <- species_richness |>
+  filter(year == 2018) |>
+  ggplot(aes(x = treatment, y = richness)) +
+  geom_boxplot() + 
+  facet_grid(~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming))
+
+mod_richness_boxplot_2018
+
+#___________________________________#
+#Need block to make new site: Therefore takes the block info from community_data and combine it by plotID to species_richness
+block_cloumn <- community_data|>
+  select(plotID, block)|> 
+  unique()
+
+species_richness <- species_richness|>
+  left_join(env, by = "plotID")|>
+  left_join(block_cloumn, by = "plotID")|>
+  filter(year == 2022)|>
+  mutate(new_site = paste0(substr(site, 1,3), "_", block)) 
+
+species_richness$precip_scaled <- scale(species_richness$precip)
+
+#________Making the models________#
+
+#Starting with making a null model so we can test the predictors alone
+
+null_richness <- glmmTMB(richness ~ 1 + (1|site), data = species_richness, family = poisson)
+
+richmod_precip <-  glmmTMB(richness ~ precip_scaled + (1|site), data = species_richness, family = poisson)
+
+anova(null_richness, richmod_precip)
+
+#Also checking warming, site, transplant and treatment separated as well
+richmod_warm <- glmmTMB(richness ~ warming + (1|site), data = species_richness, family = poisson)
+richmod_site <- glmmTMB(richness ~ site + (1|site), data = species_richness, family = poisson) #Do not think this is right, however its easy to remove if neccesary
+richmod_trans <- glmmTMB(richness ~ transplant + (1|site), data = species_richness, family = poisson)
+richmod_treat <- glmmTMB(richness ~ treatment + (1|site), data = species_richness, family = poisson)
+
+anova(null_richness, richmod_warm)
+anova(null_richness, richmod_site)
+anova(null_richness, richmod_trans)
+anova(null_richness, richmod_treat)
+
+#__________Testing precip up against warming__________#
+
+richmod_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + (1|site), data = species_richness, family = poisson)
+richmod_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_precip, richmod_warm_and_precip)
+anova(richmod_precip, richmod_warm_over_precip)
+anova(richmod_warm_and_precip, richmod_warm_over_precip)
+
+#_________Testing precip up against transplant_________#
+
+richmod_trans_and_precip <-  glmmTMB(richness ~ precip_scaled + transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_over_precip <-  glmmTMB(richness ~ precip_scaled * transplant + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_precip, richmod_trans_and_precip)
+anova(richmod_precip, richmod_trans_over_precip)
+anova(richmod_trans_and_precip, richmod_trans_over_precip)
+
+#_________Testing transplant up against warming_________#
+
+richmod_trans_and_warm <-  glmmTMB(richness ~ warming + transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_over_warm <-  glmmTMB(richness ~ warming * transplant + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm, richmod_trans_and_warm)
+anova(richmod_warm, richmod_trans_over_warm)
+anova(richmod_trans_and_warm, richmod_trans_over_warm)
+
+#_________Adding transplant__________#
+
+#Making models adding transplant
+richmod_trans_and_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * transplant + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_trans_and_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_trans_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_trans_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_trans_over_warm_over_precip)
+anova(richmod_trans_and_warm_and_precip, richmod_trans_over_warm_adding_precip)
+anova(richmod_trans_and_warm_and_precip, richmod_trans_warm_over_precip)
+anova(richmod_trans_over_warm_adding_precip, richmod_trans_over_warm_over_precip)
+anova(richmod_trans_warm_over_precip, richmod_trans_over_warm_over_precip)
+
+#_________Testing precip up against treatment_________#
+
+richmod_treat_and_precip <-  glmmTMB(richness ~ precip_scaled + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_precip <-  glmmTMB(richness ~ precip_scaled * treatment + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_precip, richmod_treat_and_precip)
+anova(richmod_precip, richmod_treat_over_precip)
+anova(richmod_treat_and_precip, richmod_treat_over_precip)
+
+#_________Testing treatment up against warming_________#
+
+richmod_treat_and_warm <-  glmmTMB(richness ~ warming + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm <-  glmmTMB(richness ~ warming * treatment + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm, richmod_treat_and_warm)
+anova(richmod_warm, richmod_treat_over_warm)
+anova(richmod_treat_and_warm, richmod_treat_over_warm)
+
+#__________Adding treatment__________#
+
+#Making models adding treatment
+richmod_treat_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * treatment + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_treat_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_treat_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_treat_over_warm_over_precip)
+anova(richmod_treat_warm_and_precip, richmod_treat_over_warm_adding_precip)
+anova(richmod_treat_warm_and_precip, richmod_treat_warm_over_precip)
+anova(richmod_treat_over_warm_adding_precip, richmod_treat_over_warm_over_precip)
+anova(richmod_treat_warm_over_precip, richmod_treat_over_warm_over_precip)
+
+
+#__________Adding novel and extant__________#
+
+richmod_novel_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + novel + (1|site), data = species_richness, family = poisson)
+richmod_novel_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + novel + (1|site), data = species_richness, family = poisson)
+richmod_novel_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * novel + (1|site), data = species_richness, family = poisson)
+richmod_novel_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * novel + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_novel_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_novel_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_novel_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_novel_over_warm_over_precip)
+
+richmod_extant_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * extant + (1|site), data = species_richness, family = poisson)
+richmod_extant_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * extant + (1|site), data = species_richness, family = poisson)
+
+anova(richmod_warm_and_precip, richmod_extant_warm_and_precip)
+anova(richmod_warm_and_precip, richmod_extant_warm_over_precip)
+anova(richmod_warm_over_precip, richmod_extant_over_warm_adding_precip)
+anova(richmod_warm_over_precip, richmod_extant_over_warm_over_precip)
+
+#Making the communities ready for ordination. Removing unnecessary observations, filtering out rare species, making a new column that includes year, site and plotID. Pivot the dataframe wider. 
 community_ordination <- the_communities|>
   group_by(species)|>
   filter(n()>3)|>
@@ -93,13 +317,15 @@ community_ordination <- the_communities|>
   mutate(plotIDyear = paste0(plotID, "_", year))|> #Making a new column that includes plotid and year
   filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|> #Sal_sp removed since its rare, but are not removed when we removes the three most rare species. 
   left_join(env, by = "plotID")|>
-  rename(precip_2009_2019 = 'precipitation_2009-2019')|>
-  select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip_2009_2019)|>
+  rename(precip = 'precipitation_2009-2019')|>
+  select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip)|>
   pivot_wider(names_from = "species", values_from = "cover", values_fill = 0)|>
   column_to_rownames("plotIDyear") |> #Making the column plotIDyear to rownames. 
   mutate(transplant = ifelse(treatment %in% c("N", "E"), "transplant", "control"))|>
   mutate(novel = ifelse(treatment == "N", "novel", "other"))|>
   mutate(extant = ifelse(treatment == "E", "extant", "other"))
+
+
 
 ###################################################################
 ############Alt mellom her og neste kan være unødvendig############
@@ -110,18 +336,18 @@ community_ordination <- the_communities|>
 #Community wider separated in locations. Removing all the unnecessary columns. Only species and the rows left.
 com_ord_skj <- community_ordination |>
   filter(site == "Skjellingahaugen")|>
-  select(- c(warming, treatment, site, plotID, year, precip_2009_2019))
+  select(- c(warming, treatment, site, plotID, year, precip))
 
 #Making a wide format that includes all the columns. These need to be used in the ordination with the com_ord. The same done for all locations.
 com_skj <- community_ordination|>
   filter(site == "Skjellingahaugen")
 
-# <- the_communities|>
+# <- community_analysis|>
 #   filter(n()>3, .by = species)|>
 #   filter(site == "Skjellingahaugen")|>
 #   mutate(plotIDyear = paste0(plotID, "_", year))|>
 #   filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|>
-#   select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip_2009_2019)|>
+#   select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip)|>
 #   pivot_wider(names_from = "species", values_from = "cover", values_fill = 0)|>
 #   column_to_rownames("plotIDyear")
 
@@ -132,7 +358,7 @@ com_ord_lav <- community_ordination |>
 
 com_lav  <- community_ordination|>
   filter(site == "Lavisdalen")
-#<- the_communities|>
+#<- community_analysis|>
 #   filter(n()>3, .by = species)|>
 #   filter(site == "Lavisdalen")|>
 #   mutate(plotIDyear = paste0(plotID, "_", year))|>
@@ -150,7 +376,7 @@ com_gud <- community_ordination |>
   filter(site == "Gudmedalen") 
 
 
-# com_gud <- the_communities|>
+# com_gud <- community_analysis|>
 #   filter(n()>3, .by = species)|>
 #   filter(site == "Gudmedalen")|>
 #   mutate(plotIDyear = paste0(plotID, "_", year))|>
@@ -167,7 +393,7 @@ com_ord_ulv <- community_ordination |>
 com_ulv <- community_ordination |>
   filter(site == "Ulvehaugen")
 
-# com_ulv <- the_communities|>
+# com_ulv <- community_analysis|>
 #   filter(n()>3, .by = species)|>
 #   filter(site == "Ulvehaugen")|>
 #   mutate(plotIDyear = paste0(plotID, "_", year))|>
@@ -179,17 +405,17 @@ com_ulv <- community_ordination |>
 
 #Community wider with everything. Combining this with the community_ordination to get all the locations in the same. 
 com_ord_wide <- community_ordination|>
-  select(-warming, -treatment, -site, -treat, -plotID, -year, -transplant, -precip_2009_2019, -novel, -extant)
+  select(-warming, -treatment, -site, -treat, -plotID, -year, -transplant, -precip, -novel, -extant)
 
-com_ord_wide_test <- the_communities |>
+com_ord_wide_test <- community_analysis |>
   group_by(species)|>
   filter(n()>3)|>
   ungroup()|>
   mutate(plotIDyear = paste0(plotID, "_", year))|> #Making a new column that includes plotid and year
   filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|> #Sal_sp removed since its rare, but are not removed when we removes the three most rare species. 
   left_join(env, by = "plotID")|>
-  rename(precip_2009_2019 = 'precipitation_2009-2019')|>
-  select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip_2009_2019)|>
+  rename(precip = 'precipitation_2009-2019')|>
+  select(plotIDyear, species, warming, treatment, site, treat, cover, plotID, year, precip)|>
   pivot_wider(names_from = "species", values_from = "cover", values_fill = 0)|>
   mutate(transplant = ifelse(treatment %in% c("N", "E"), "transplant", "control"))|>
   mutate(novel = ifelse(treatment == "N", "novel", "other"))|>
@@ -208,7 +434,7 @@ com_ord_wide_test <- the_communities |>
 #Starting with testing the predictors
 RDA_site <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ site, data = community_ordination)
 RDA_warm <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ warming, data = community_ordination)
-RDA_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ precip_2009_2019, data = community_ordination)
+RDA_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ precip, data = community_ordination)
 RDA_trans <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant, data = community_ordination)
 RDA_treat <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment, data = community_ordination)
 RDA_time <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ year, data = community_ordination)
@@ -233,9 +459,9 @@ anova(null,RDA_time)
 
 #__________Warming and precip__________#
 
-RDA_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ warming + precip_2009_2019, data = community_ordination) #Hør med Ragnhild, Ragnhild sier behold
+RDA_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ warming + precip, data = community_ordination) #Hør med Ragnhild, Ragnhild sier behold
 
-RDA_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ warming * precip_2009_2019, data = community_ordination)
+RDA_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ warming * precip, data = community_ordination)
 
 anova(RDA_precip, RDA_warm_and_precip)
 anova(RDA_precip, RDA_warm_over_precip)
@@ -244,9 +470,9 @@ anova(RDA_warm_and_precip, RDA_warm_over_precip)
 #By adding warming, the interaction with precip have a larger effect than seperated. We therefor goes further with the interaction
 
 #__________Transplant and precip__________#
-RDA_trans_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant + precip_2009_2019, data = community_ordination) 
+RDA_trans_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant + precip, data = community_ordination) 
 
-RDA_trans_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * precip_2009_2019, data = community_ordination)
+RDA_trans_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * precip, data = community_ordination)
 
 anova(RDA_precip, RDA_trans_and_precip)
 anova(RDA_precip, RDA_trans_over_precip)
@@ -263,13 +489,13 @@ anova(RDA_trans_and_warm, RDA_trans_over_warm)
 
 #__________Including transplants__________#
 
-RDA_transplant_adding_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant + warming * precip_2009_2019, data = community_ordination)
+RDA_transplant_adding_warm_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant + warming * precip, data = community_ordination)
 #Eigenval = 6.737078
-RDA_transplant_over_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * warming * precip_2009_2019, data = community_ordination)
+RDA_transplant_over_warm_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * warming * precip, data = community_ordination)
 #Eigenval = 6.742093
-RDA_transplant_over_precip_adding_warm <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * precip_2009_2019 + warming, data = community_ordination)
+RDA_transplant_over_precip_adding_warm <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * precip + warming, data = community_ordination)
 
-RDA_transplant_over_warm_adding_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * warming + precip_2009_2019, data = community_ordination)
+RDA_transplant_over_warm_adding_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ transplant * warming + precip, data = community_ordination)
 
 anova(RDA_warm_over_precip, RDA_transplant_adding_warm_over_precip) #0.019*
 anova(RDA_warm_over_precip, RDA_transplant_over_warm_and_precip) #0.026*
@@ -281,9 +507,9 @@ anova(RDA_transplant_over_precip_adding_warm, RDA_transplant_over_warm_and_preci
 anova(RDA_transplant_over_warm_adding_precip, RDA_transplant_over_warm_and_precip)
 
 #__________Treatment and precip__________#
-RDA_treat_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment + precip_2009_2019, data = community_ordination) 
+RDA_treat_and_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment + precip, data = community_ordination) 
 
-RDA_treat_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * precip_2009_2019, data = community_ordination)
+RDA_treat_over_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * precip, data = community_ordination)
 
 anova(RDA_precip, RDA_treat_and_precip)
 anova(RDA_precip, RDA_treat_over_precip)
@@ -299,10 +525,10 @@ anova(RDA_treat, RDA_treat_over_warm)
 anova(RDA_treat_and_warm, RDA_treat_over_warm)
 
 #__________ Including treatment __________#
-RDA_warm_and_precip_added_treatment <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment + warming * precip_2009_2019, data = community_ordination)
-RDA_warm_and_precip_and_treatment <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * warming * precip_2009_2019, data = community_ordination)
-RDA_warm_and_treatment_adding_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * warming + precip_2009_2019, data = community_ordination)
-RDA_precip_and_treatment_adding_warm <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * precip_2009_2019 + warming, data = community_ordination)
+RDA_warm_and_precip_added_treatment <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment + warming * precip, data = community_ordination)
+RDA_warm_and_precip_and_treatment <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * warming * precip, data = community_ordination)
+RDA_warm_and_treatment_adding_precip <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * warming + precip, data = community_ordination)
+RDA_precip_and_treatment_adding_warm <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ treatment * precip + warming, data = community_ordination)
 
 anova(RDA_warm_over_precip, RDA_warm_and_precip_added_treatment) #0.008**, Eigenval = 6.737166
 anova(RDA_warm_over_precip, RDA_warm_and_precip_and_treatment) #0.001***, Eigenval = 6.747975
@@ -314,15 +540,15 @@ anova(RDA_warm_and_treatment_adding_precip, RDA_warm_and_precip_and_treatment)
 anova(RDA_precip_and_treatment_adding_warm, RDA_warm_and_precip_and_treatment)
 
 #
-RDA_warm_and_precip_added_extant <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ extant + warming * precip_2009_2019, data = community_ordination)
-RDA_warm_and_precip_and_extant <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ extant * warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_added_extant <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ extant + warming * precip, data = community_ordination)
+RDA_warm_and_precip_and_extant <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ extant * warming * precip, data = community_ordination)
 
 anova(RDA_warm_over_precip, RDA_warm_and_precip_added_extant)
 anova(RDA_warm_over_precip, RDA_warm_and_precip_and_extant)
 anova(RDA_warm_and_precip_added_extant, RDA_warm_and_precip_and_extant)
 
-RDA_warm_and_precip_added_novel <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ novel + warming * precip_2009_2019, data = community_ordination)
-RDA_warm_and_precip_and_novel <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ novel * warming * precip_2009_2019, data = community_ordination)
+RDA_warm_and_precip_added_novel <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ novel + warming * precip, data = community_ordination)
+RDA_warm_and_precip_and_novel <- rda(sqrt(community_ordination[, -c(1:7, 86:88)]) ~ novel * warming * precip, data = community_ordination)
 
 anova(RDA_warm_and_precip, RDA_warm_and_precip_added_novel)
 anova(RDA_warm_and_precip, RDA_warm_and_precip_and_novel)
@@ -398,8 +624,8 @@ species_richness <- community_analysis |>
   ungroup()|>
   mutate(transplant = ifelse(treatment %in% c("N", "E"), "transplant", "control"))|>
   left_join(env, by = "plotID")|>
-  rename(precip_2009_2019 = 'precipitation_2009-2019')|>
-  select(year, warming, treatment, site, presence, plotID, treat, richness, transplant, novel, extant, treat_richness, precip_2009_2019)
+  rename(precip = 'precipitation_2009-2019')|>
+  select(year, warming, treatment, site, presence, plotID, treat, richness, transplant, novel, extant, treat_richness, precip)
 
 #############Richness figur####################
 
@@ -407,7 +633,7 @@ mod_richness_boxplot_1 <- species_richness |>
   filter(year == c(2018, 2022))|>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot() + 
-  facet_grid(year ~ as.factor(precip_2009_2019)) +
+  facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming))
 
@@ -417,7 +643,7 @@ mod_richness_boxplot_2022 <- species_richness |>
   filter(year == 2022) |>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot() + 
-  facet_grid(~ as.factor(precip_2009_2019)) +
+  facet_grid(~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming))
 
@@ -427,7 +653,7 @@ mod_richness_boxplot_2018 <- species_richness |>
   filter(year == 2018) |>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot() + 
-  facet_grid(~ as.factor(precip_2009_2019)) +
+  facet_grid(~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming))
 
@@ -448,7 +674,7 @@ species_richness <- species_richness|>
   mutate(precip = as.numeric(precip, na.rm = TRUE)) 
   #mutate(overdisp_column = 1:nrow(species_richness))
 
-species_richness$precip_scaled <- scale(species_richness$precip_2009_2019)
+species_richness$precip_scaled <- scale(species_richness$precip)
 
 #________Making the models________#
 
@@ -621,7 +847,7 @@ species_evenness_2018 <- comp_data|>
   ungroup()|>
   filter(year == 2018) |>
   rename(evenness = "Estar" ) |>
-  rename(precip = "precip_2009_2019")
+  rename(precip = "precip")
 
 species_evenness_2019 <- comp_data|>
   group_by(site,year,treat)|>
@@ -629,7 +855,7 @@ species_evenness_2019 <- comp_data|>
   ungroup()|>
   filter(year == 2019) |>
   rename(evenness = "Estar" ) |>
-  rename(precip = "precip_2009_2019")
+  rename(precip = "precip")
 
 species_evenness_2021 <- comp_data|>
   group_by(site,year,treat)|>
@@ -637,7 +863,7 @@ species_evenness_2021 <- comp_data|>
   ungroup()|>
   filter(year == 2021) |>
   rename(evenness = "Estar" ) |>
-  rename(precip = "precip_2009_2019")
+  rename(precip = "precip")
 
 
 species_evenness_2022 <- comp_data|>
@@ -646,10 +872,10 @@ species_evenness_2022 <- comp_data|>
   ungroup()|>
   filter(year == 2022) |>
   rename(evenness = "Estar" ) |>
-  rename(precip = "precip_2009_2019")
+  rename(precip = "precip")
 
 comp_data_2 <- comp_data_test|>
-  select("Estar", "plotIDyear", "year", "warming", "treatment", "site", "transplant", "novel", "extant", "treat", "precip_2009_2019")
+  select("Estar", "plotIDyear", "year", "warming", "treatment", "site", "transplant", "novel", "extant", "treat", "precip")
 
 species_evenness_general <- species_evenness|>
   left_join(comp_data_2, by = c("plotIDyear", "year", "warming", "treatment", "site", "transplant", "novel", "extant", "treat")) |>
