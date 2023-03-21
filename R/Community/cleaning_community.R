@@ -87,7 +87,7 @@ meta_data <- meta_data_download|>
 
 community_data <- community_data |>
   left_join(meta_data, by = "plotID") |>
-  rename(warming = OTC) 
+  rename(warming = OTC) |>
   left_join(name_dictionary, by = c("recorder" = "initials"))|>
   select(-recorder) |>
   rename(recorder = name) |>
