@@ -87,7 +87,7 @@ meta_data <- meta_data_download|>
 
 community_data <- community_data |>
   left_join(meta_data, by = "plotID") |>
-  rename(warming = OTC) |>
+  rename(warming = OTC) 
   left_join(name_dictionary, by = c("recorder" = "initials"))|>
   select(-recorder) |>
   rename(recorder = name) |>
@@ -102,7 +102,8 @@ community_data <- community_data |>
 #Making data ready for turfmapper by widening the data
 community_data_longer <- community_data |>
   pivot_longer(Ach_mil:Nid_seedling, values_drop_na = TRUE)|> #Check which species is the first and the last and use these instead of Ach_mil and Nid_seedling.
-  rename(species = name)
+  rename(species = name)|>
+  unique()
 
 #Making new variables were different signs in the dataset gives the same value based on which category it goes under. 
 community_data_longer <- community_data_longer |>
@@ -736,6 +737,7 @@ community_clean <- community_clean |>
   mutate(species = ifelse(species == "Leo_sp" & plotID == "Ulv_3_5", "Leo_aut", species))|>
   mutate(species = ifelse(species %in% c("Car_big_cf", "Car_sp") & plotID == "Ulv_4_1", "Car_big", species))|>
   mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_4_1" & year == 2019, 4, cover))|>
+  mutate(cover = ifelse(species == "Car_big" & plotID == "Ulv_4_1" & year == 2021, 4, cover))|>
   mutate(species = ifelse(species == "Car_sp_2" & plotID == "Ulv_4_1", "Car_sp", species))|>
   mutate(species = ifelse(species == "Cer_alp" & plotID == "Ulv_4_1", "Cer_fon", species))|>
   mutate(cover = ifelse(species == "Poa_alp" & plotID == "Ulv_4_1" & year == 2019 ,1,cover))|>
@@ -937,8 +939,13 @@ community_clean_plotlevel_info <- community_clean |>
   unique() |>
   pivot_longer(cols = vegetation_cover:moss_depth_mean, names_to = "name", values_to = "value")
 
-write.csv(community_clean_species_cover, file = "INCLINE_community_species_cover.csv",row.names= FALSE)
-write.csv(community_clean_subplot, file = "INCLINE_community_subplot.csv",row.names= FALSE)
-write.csv(community_clean_plotlevel_info, file = "INCLINE_community_plotlevel_info.csv",row.names= FALSE)
+
+write.csv(community_clean_species_cover, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_species_cover.csv",row.names= FALSE)
+
+write.csv(community_clean_subplot, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_subplot.csv",row.names= FALSE)
+
+write.csv(community_clean_plotlevel_info, file = "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\INCLINE_community_plotlevel_info.csv",row.names= FALSE)
+
+
 
 
