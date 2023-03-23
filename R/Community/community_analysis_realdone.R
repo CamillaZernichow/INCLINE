@@ -143,56 +143,69 @@ species_richness <- community_analysis |>
 
 ######_________________________ Richness figure _________________________######
 
-mod_richness_boxplot_1 <- species_richness |>
+dev.off()
+
+cold_warm_palette <- c("Cold" = "#377eb8", "Warm" =  "#e41a1c")
+
+#__________Richness from 2018 to 2022____________#
+mod_richness_boxplot_2018_to_2022 <- species_richness |>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot() + 
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
-  geom_jitter(aes(color = warming))
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
 
-mod_richness_boxplot_1
+mod_richness_boxplot_2018_to_2022
 
-mod_richness_boxplot_2022 <- species_richness |>
-  filter(year == 2022) |>
+ggsave(plot = mod_richness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
+
+
+#_________Richness 2018 and 2022__________#
+mod_richness_boxplot_2018_2022 <- species_richness |>
+  filter(year == c(2018,2022))|>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot() + 
-  facet_grid(~ as.factor(precip)) +
+  facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
-  geom_jitter(aes(color = warming))
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
+
+mod_richness_boxplot_2018_2022
+
+ggsave(plot = mod_richness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_2022.png", width = 8, height = 10, dpi = 300)
+
+#__________Richness 2022___________#
+
+mod_richness_boxplot_2022 <- species_richness |>
+  filter(year == 2022)|>
+  ggplot(aes(x = treatment, y = richness)) +
+  geom_boxplot() + 
+  facet_grid(year ~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
 
 mod_richness_boxplot_2022
 
-mod_richness_boxplot_2018 <- species_richness |>
-  filter(year == 2018) |>
-  ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot() + 
-  facet_grid(~ as.factor(precip)) +
-  theme_bw() +
-  geom_jitter(aes(color = warming))
 
-mod_richness_boxplot_2018
+ggsave(plot = mod_richness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2022.png", width = 8, height = 10, dpi = 300)
 
-ggsave(plot = mod_richness_boxplot_1, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_2022.png", width = 10, height = 8, dpi = 300)
-
-ggsave(plot = mod_richness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2022.png", width = 10, height = 8, dpi = 300)
-
-ggsave(plot = mod_richness_boxplot_2018, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018.png", width = 10, height = 8, dpi = 300)
-
-#___________________________________#
-#Need block to make new site: Therefore takes the block info from community_data and combine it by plotID to species_richness
-block_cloumn <- community_data|>
-  select(plotID, block)|> 
-  unique()
-
-species_richness <- species_richness|>
-  left_join(env, by = "plotID")|>
-  left_join(block_cloumn, by = "plotID")|>
-  filter(year == 2022)|>
-  mutate(new_site = paste0(substr(site, 1,3), "_", block)) 
-
-species_richness$precip_scaled <- scale(species_richness$precip)
 
 #######__________________________Richness models__________________________#######
+species_richness$precip_scaled <- scale(species_richness$precip)
 
 #Starting with making a null model so we can test the predictors alone
 
@@ -330,39 +343,7 @@ com_ord_ulv <- community_ordination|>
 ####                               Evenness                                ####
 ###############################################################################
 
-#Need block to make new site: Therefore takes the block info from community_data and combine it by plotID to species_richness
-
-species_evenness_maybe <- community_analysis |>
-  select(year|warming|treatment|site|species|presence|plotID|cover|subPlot)|>
-  filter(!species %in% c("Car_pal", "Car_pil", "Hyp_mac", "Suc_pra", "Vio_can", "Ver_off"))|>
-  filter(!subPlot %in% c(1,2,3,4,5,6,7,8,14,15,21,22,28,29,30,31,32,33,34,35,"whole_plot"))|>
-  select(-subPlot)|>
-  mutate(transplant = ifelse(treatment %in% c("N", "E"), "transplant", "control"))|>
-  mutate(novel = ifelse(treatment == "novel", "novel", "other"))|>
-  mutate(extant = ifelse(treatment == "extant", "extant", "other"))|>
-  mutate(cover = as.numeric(cover))|>
-  mutate(year = as.numeric(year))|>
-  filter(!species %in% c("Nid_seedling", "Unknown", "Fern", "Nid_juvenile", "Sal_sp"))|>
-  group_by(site, year, species, warming, treatment)|>
-  mutate(treat = paste0(warming, "_", treatment)) |>
-  filter(!treatment %in% c("R"))|>
-  mutate(treat = recode(treat, "W_C" = "Warm\nControl"))|>
-  mutate(treat = recode(treat, "W_N" = "Warm\nNovel"))|>
-  mutate(treat = recode(treat, "C_C" = "Cold\nControl"))|>
-  mutate(treat = recode(treat, "C_N" = "Cold\nNovel"))|>
-  mutate(treat = recode(treat, "C_E" = "Cold\nExtant"))|>
-  mutate(treat = recode(treat, "W_E" = "Warm\nExtant"))|>
-  ungroup()|>
-  group_by(plotID, year)|>
-  filter(!duplicated(species)) |>
-  mutate(plotIDyear = paste0(plotID, "_", year))
-
-species_evenness_maybe <- species_evenness_maybe|>
-  left_join(env, by = "plotID")|>
-  rename("precip" = "precipitation_2009-2019") |>
-  left_join(block_cloumn, by = "plotID")
-
-#Only this is neccesary?#
+#Making evenness with a function called eventastar
 evenness <- eventstar(community_ordination[, -c(1:7, 86:88)])
 
 species_evenness <- merge(evenness,community_ordination, by='row.names',all=TRUE)|>
@@ -376,23 +357,17 @@ species_evenness_2018 <- species_evenness|>
   ungroup()|>
   filter(year == 2018) 
 
-species_evenness_2019 <- species_evenness|>
-  group_by(site,year,treat)|>
-  mutate(treat_evenness = mean(evenness))|>
-  ungroup()|>
-  filter(year == 2019)
-
-species_evenness_2021 <- species_evenness|>
-  group_by(site,year,treat)|>
-  mutate(treat_evenness = mean(evenness))|>
-  ungroup()|>
-  filter(year == 2021)
-
 species_evenness_2022 <- species_evenness|>
   group_by(site,year,treat)|>
   mutate(treat_evenness = mean(evenness))|>
   ungroup()|>
   filter(year == 2022)
+
+species_evenness_2018_2022 <- species_evenness|>
+  group_by(site,year,treat)|>
+  mutate(treat_evenness = mean(evenness))|>
+  ungroup()|>
+  filter(year == c(2018, 2022))
 #Is treat_evenness necessary?
 
 #Standardise the precip variable
@@ -400,62 +375,62 @@ species_evenness$precip_scaled <- scale(species_evenness$precip)
 
 ######__________________________Evenness figure__________________________######
 
-mod_evenness_boxplot_1 <- species_evenness |>
+#__________Evenness from 2018 to 2022____________#
+mod_evenness_boxplot_2018_to_2022 <- species_evenness |>
   ggplot(aes(x = treatment, y = evenness)) +
   geom_boxplot() + 
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
-  geom_jitter(aes(color = warming))
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species evenness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
 
-mod_evenness_boxplot_1
+mod_evenness_boxplot_2018_to_2022
 
-mod_evenness_boxplot_2018 <- species_evenness_2018 |>
+ggsave(plot = mod_evenness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
+
+
+#_________evenness 2018 and 2022__________#
+mod_evenness_boxplot_2018_2022 <- species_evenness |>
+  filter(year == c(2018,2022))|>
   ggplot(aes(x = treatment, y = evenness)) +
   geom_boxplot() + 
-  facet_wrap(~ as.factor(precip), nrow = 1) +
+  facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
-  geom_jitter(aes(color = warming))
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species evenness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
 
-mod_evenness_boxplot_2018
+mod_evenness_boxplot_2018_2022
 
-mod_evenness_boxplot_2019 <- species_evenness_2019 |>
+ggsave(plot = mod_evenness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2018_2022.png", width = 8, height = 10, dpi = 300)
+
+#__________evenness 2022___________#
+
+mod_evenness_boxplot_2022 <- species_evenness |>
+  filter(year == 2022)|>
   ggplot(aes(x = treatment, y = evenness)) +
   geom_boxplot() + 
-  facet_wrap(~ as.factor(precip), nrow = 1) +
+  facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
-  geom_jitter(aes(color = warming))
-
-mod_evenness_boxplot_2019
-
-mod_evenness_boxplot_2021 <- species_evenness_2021 |>
-  ggplot(aes(x = treatment, y = evenness)) +
-  geom_boxplot() + 
-  facet_wrap(~ as.factor(precip), nrow = 1) +
-  theme_bw() +
-  geom_jitter(aes(color = warming))
-
-mod_evenness_boxplot_2021
-
-mod_evenness_boxplot_2022 <- species_evenness_2022 |>
-  ggplot(aes(x = treatment, y = evenness)) +
-  geom_boxplot() + 
-  facet_wrap(~ as.factor(precip), nrow = 1) +
-  theme_bw() +
-  geom_jitter(aes(color = warming))
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species evenness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
 
 mod_evenness_boxplot_2022
 
-ggsave(plot = mod_evenness_boxplot_1, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Evennessboxplot_2018_2022.png", width = 10, height = 8, dpi = 300)
 
-ggsave(plot = mod_evenness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Evennessboxplot_2022.png", width = 10, height = 8, dpi = 300)
+ggsave(plot = mod_evenness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2022.png", width = 8, height = 10, dpi = 300)
 
-ggsave(plot = mod_evenness_boxplot_2018, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Evennessboxplot_2018.png", width = 10, height = 8, dpi = 300)
-
-ggsave(plot = mod_evenness_boxplot_2019, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Evennessboxplot_2018_2022.png", width = 10, height = 8, dpi = 300)
-
-ggsave(plot = mod_evenness_boxplot_2021, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Evennessboxplot_2022.png", width = 10, height = 8, dpi = 300)
-
-ggsave(plot = mod_richness_boxplot_2018, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018.png", width = 10, height = 8, dpi = 300)
 
 
 ######__________________________Evenness models__________________________######
@@ -685,127 +660,118 @@ anova(RDA_warm_and_precip, RDA_warm_and_precip_added_novel)
 anova(RDA_warm_and_precip, RDA_warm_and_precip_and_novel)
 anova(RDA_warm_and_precip_added_novel, RDA_warm_and_precip_and_novel)
 
-######___________________________ PRC model _____________________________######
+######_____________________ PRC models and figures _______________________######
 
-community_ordination$warming <- factor(community_ordination$warming)
-community_ordination$year <- factor(community_ordination$year)
-community_ordination$treatment <- factor(community_ordination$treatment)
-community_ordination$treat <- factor(community_ordination$treat)
+#Making a new column that includes all variables
+PRC_com_ord <- community_ordination |>
+  mutate(variables = paste0(treat, " ", site))
 
-RDA_transplant_over_warm_and_precip_test <- as.matrix(RDA_transplant_over_warm_and_precip)
+#Making the variables to factors
+PRC_com_ord$treat <- factor(PRC_com_ord$treat)
+PRC_com_ord$year <- factor(PRC_com_ord$year)
+PRC_com_ord$site <- factor(PRC_com_ord$site)
+PRC_com_ord$variables <-factor(PRC_com_ord$variables)
 
-mod <- prc(community_ordination[, -c(1:7, 86:88)], community_ordination$treatment, community_ordination$year)
-mod
+#The models with all variables
+mod_treat <- prc(PRC_com_ord[,-c(1:7, 86:89)], PRC_com_ord$variables, PRC_com_ord$year)
 
-mod_2 <- prc(community_ordination[, -c(1:7, 86:88)], community_ordination$warming, community_ordination$year)
-mod_2
+logabu_var <- colSums(PRC_com_ord[, -c(1:7, 86:89)])
 
-summary(mod)
+mod_treat_plot <- autoplot(mod_treat, select = logabu_var >100, xlab = "Year", ylab = "Effect?", )
 
-logabu <- colSums(community_ordination[, -c(1:7, 86:88)])
-plot(mod, select = logabu > 500)
-plot(mod_2, select = logabu > 500)
+mod_treat_plot
 
-autoplot(mod)
+# Save prc plot
+ggsave(plot = mod_treat_plot, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_all.png", width = 10, height = 6, dpi = 300)
 
-mod_3 <- prc(community_ordination[, -c(1:7, 86:88)], community_ordination$treatment, community_ordination$year)
+#____Making the PRC dataframe site specific_____#
 
-autoplot(mod_3, select = logabu > 500)
-plot(mod_3, select = logabu > 500)
+PRC_skj <- PRC_com_ord |>
+  filter(site == "Skjellingahaugen")
 
-ggsave(plot = , "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_treat.png", width = 10, height = 8, dpi = 300)
+PRC_lav <- PRC_com_ord |>
+  filter(site == "Lavisdalen")
 
-ggsave(plot = PRC_warming, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_warm.png", width = 10, height = 8, dpi = 300)
+PRC_gud <- PRC_com_ord |>
+  filter(site == "Gudmedalen")
 
-#____________Site based_____________#
+PRC_ulv <- PRC_com_ord |>
+  filter(site == "Ulvehaugen")
 
-#SKJ
-com_ord_skj$warming <- factor(com_ord_skj$warming)
-com_ord_skj$year <- factor(com_ord_skj$year)
-com_ord_skj$treatment <- factor(com_ord_skj$treatment)
-com_ord_skj$treat <- factor(com_ord_skj$treat)
+#_______________Skjellingahaugen_______________#
+PRC_skj$treat <- factor(PRC_skj$treat)
+PRC_skj$year <- factor(PRC_skj$year)
+PRC_skj$site <- factor(PRC_skj$site)
+PRC_skj$variables <-factor(PRC_skj$variables)
 
-mod_skj <- prc(com_ord_skj[, -c(1:7, 86:88)], com_ord_skj$treatment, com_ord_skj$year)
-autoplot(mod_skj)
+mod_prc_skj <- prc(PRC_skj[, -c(1:7, 86:89)], PRC_skj$treat, PRC_skj$year)
+logabu_skj <- colSums(PRC_skj[, -c(1:7, 86:89)])
 
-mod_skj_2 <- prc(com_ord_skj[, -c(1:7, 86:88)], com_ord_skj$warming, com_ord_skj$year)
-autoplot(mod_skj_2)
+mod_prc_skj_plot <- autoplot(mod_prc_skj, select = logabu_skj >100, xlab = "year", ylab = "Effect")
 
-logabu_site <- colSums(com_ord_skj [,-c(1:7, 86:88)])
-plot(mod_skj, select = logabu > 500)
-plot(mod_skj_2, select = logabu > 500)
+mod_prc_skj_plot
 
-#LAV
-com_ord_lav$warming <- factor(com_ord_lav$warming)
-com_ord_lav$year <- factor(com_ord_lav$year)
-com_ord_lav$treatment <- factor(com_ord_lav$treatment)
-com_ord_lav$treat <- factor(com_ord_lav$treat)
+# Save prc plot
+ggsave(plot = mod_prc_skj_plot, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_skj.png", width = 10, height = 6, dpi = 300)
 
-mod_lav <- prc(com_ord_lav[, -c(1:7, 86:88)], com_ord_lav$treatment, com_ord_lav$year)
-mod_lav
-autoplot(mod_lav)
+#_______________Lavisdalen_______________#
 
-mod_lav_2 <- prc(com_ord_lav[, -c(1:7, 86:88)], com_ord_lav$warming, com_ord_lav$year)
-mod_lav_2
-autoplot(mod_lav_2)
+PRC_lav$treat <- factor(PRC_lav$treat)
+PRC_lav$year <- factor(PRC_lav$year)
+PRC_lav$site <- factor(PRC_lav$site)
+PRC_lav$variables <-factor(PRC_lav$variables)
 
-logabu_site <- colSums(com_ord_lav[, -c(1:7, 86:88)])
-plot(mod_lav, select = logabu > 1000)
-plot(mod_lav_2, select = logabu > 500)
+mod_prc_lav <- prc(PRC_lav[, -c(1:7, 86:89)], PRC_lav$treat, PRC_lav$year)
+logabu_lav <- colSums(PRC_lav[, -c(1:7, 86:89)])
 
-#GUD
-com_ord_gud$warming <- factor(com_ord_gud$warming)
-com_ord_gud$year <- factor(com_ord_gud$year)
-com_ord_gud$treatment <- factor(com_ord_gud$treatment)
-com_ord_gud$treat <- factor(com_ord_gud$treat)
+mod_prc_lav_plot <- autoplot(mod_prc_lav, select = logabu_lav >100, xlab = "year", ylab = "Effect")
 
-mod_gud <- prc(com_ord_gud[, -c(1:7, 86:88)], com_ord_gud$treatment, com_ord_gud$year)
-mod_gud
-autoplot(mod_gud)
+mod_prc_lav_plot
 
-mod_gud_2 <- prc(com_ord_gud[, -c(1:7, 86:88)], com_ord_gud$warming, com_ord_gud$year)
-mod_gud_2
-autoplot(mod_gud_2)
+# Save prc plot
+ggsave(plot = mod_prc_lav_plot, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_lav.png", width = 10, height = 6, dpi = 300)
 
-logabu_site <- colSums(com_ord_gud[, -c(1:7, 86:88)])
-plot(mod_gud, select = logabu > 500)
-plot(mod_gud_2, select = logabu > 500)
+#_______________Gudmedalen_______________#
+
+PRC_gud$treat <- factor(PRC_gud$treat)
+PRC_gud$year <- factor(PRC_gud$year)
+PRC_gud$site <- factor(PRC_gud$site)
+PRC_gud$variables <-factor(PRC_gud$variables)
+
+mod_prc_gud <- prc(PRC_gud[, -c(1:7, 86:89)], PRC_gud$treat, PRC_gud$year)
+logabu_gud <- colSums(PRC_gud[, -c(1:7, 86:89)])
+
+mod_prc_gud_plot <- autoplot(mod_prc_gud, select = logabu_gud >100, xlab = "year", ylab = "Effect")
+
+mod_prc_gud_plot
+
+# Save prc plot
+ggsave(plot = mod_prc_gud_plot, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_gud.png", width = 10, height = 6, dpi = 300)
+
+#_______________Ulvehaugen_______________#
+
+PRC_ulv$treat <- factor(PRC_ulv$treat)
+PRC_ulv$year <- factor(PRC_ulv$year)
+PRC_ulv$site <- factor(PRC_ulv$site)
+PRC_ulv$variables <-factor(PRC_ulv$variables)
+
+mod_prc_ulv <- prc(PRC_ulv[, -c(1:7, 86:89)], PRC_ulv$treat, PRC_ulv$year)
+logabu_ulv <- colSums(PRC_ulv[, -c(1:7, 86:89)])
+
+mod_prc_ulv_plot <- autoplot(mod_prc_ulv, select = logabu_ulv >100, xlab = "year", ylab = "Effect")
+
+mod_prc_ulv_plot
+
+# Save prc plot
+ggsave(plot = mod_prc_ulv_plot, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\PRC_ulv.png", width = 10, height = 6, dpi = 300)
 
 
-#ULV
-com_ord_ulv$warming <- factor(com_ord_ulv$warming)
-com_ord_ulv$year <- factor(com_ord_ulv$year)
-com_ord_ulv$treatment <- factor(com_ord_ulv$treatment)
-com_ord_ulv$treat <- factor(com_ord_ulv$treat)
+################################################################################
+####                               Ordination                               ####
+################################################################################
 
-mod_ulv <- prc(com_ord_ulv[, -c(1:7, 86:88)], com_ord_ulv$treatment, com_ord_ulv$year)
-mod_ulv
-autoplot(mod_ulv)
-
-mod_ulv_2 <- prc(com_ord_ulv[, -c(1:7, 86:88)], com_ord_ulv$warming, com_ord_ulv$year)
-mod_ulv_2
-autoplot(mod_ulv_2)
-
-logabu_site <- colSums(com_ord_ulv[, -c(1:7, 86:88)])
-plot(mod_ulv, select = logabu > 500)
-plot(mod_ulv_2, select = logabu > 500)
-
-#######################
-######Ordinations######
-#######################
-
-library(ggvegan)
-
+Treatment_palette <- c("#FFE970","#CAB22D","#42F4A1","#2EC47E", "#FF7EF7", "#CB65C5")
 Precip_palette <- c("#BAD8F7", "#89B7E1", "#2E75B6", "#213964")
-
-#Starting to investigate the axis length with a DCA
-
-DCA <- decorana(sqrt(com_ord_skj))
-DCA
-plot(DCA)
-
-
-screeplot(DCA, bstick = TRUE)
 
 #Making a CCA for each location
 pca_skj <- rda(sqrt(com_ord_skj[, -c(1:7, 86:88)]))
@@ -819,7 +785,7 @@ Ord_plot_time_skj <- pca_fort_skj %>%
   geom_path() + #use geom_path not geom_line
   geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
   #scale_color_viridis_d() +
-  scale_fill_manual(values = Precip_palette) +
+  scale_color_manual(values = Treatment_palette) +
   scale_size(range = 2) +
   coord_equal() +
   theme_minimal(base_size = 14) +
@@ -840,7 +806,7 @@ Ord_plot_time_lav <- pca_fort_lav %>%
   geom_path() + #use geom_path not geom_line
   geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
   #scale_color_viridis_d() +
-  scale_fill_manual(values = Precip_palette) +
+  scale_color_manual(values = Treatment_palette) +
   scale_size(range = 2) +
   coord_equal() +
   theme_minimal(base_size = 14) +
@@ -861,7 +827,7 @@ Ord_plot_time_gud <- pca_fort_gud |>
   geom_path() + #use geom_path not geom_line
   geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
   #scale_color_viridis_d() +
-  scale_fill_manual(values = Precip_palette) +
+  scale_color_manual(values = Treatment_palette) +
   scale_size(range = 2) +
   coord_equal() +
   theme_minimal(base_size = 14) +
@@ -881,7 +847,7 @@ Ord_plot_time_ulv <- pca_fort_ulv |>
   geom_path() + #use geom_path not geom_line
   geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
   #scale_color_viridis_d() +
-  scale_fill_manual(values = Precip_palette) +
+  scale_color_manual(values = Treatment_palette) +
   scale_size(range = 2) +
   coord_equal() +
   theme_minimal(base_size = 14) +
@@ -891,7 +857,199 @@ Ord_plot_time_ulv
 
 Ordination_plot_PCA <- grid.arrange(Ord_plot_time_skj, Ord_plot_time_lav, Ord_plot_time_gud, Ord_plot_time_ulv, ncol = 2)
 
-ggsave(plot = Ordination_plot_PCA, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\four_plots_22_03.png", width = 10, height = 8, dpi = 300)
+ggsave(plot = Ordination_plot_PCA, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\four_plots_23_03.png", width = 10, height = 8, dpi = 300)
+
+#________2018 and 2022________#
+com_ord_skj_2018_2022 <- com_ord_skj |>
+  filter(year %in% c(2018, 2022))
+com_ord_lav_2018_2022 <- com_ord_lav |>
+  filter(year %in% c(2018, 2022))
+com_ord_gud_2018_2022 <- com_ord_gud |>
+  filter(year %in% c(2018, 2022))
+com_ord_ulv_2018_2022 <- com_ord_ulv |>
+  filter(year %in% c(2018, 2022))
+
+#Making a CCA for each location
+pca_skj_2 <- rda(sqrt(com_ord_skj_2018_2022[, -c(1:7, 86:88)]))
+pca_skj_2
+
+pca_fort_skj_2 <- fortify(pca_skj_2, display = "sites") |>
+  bind_cols(com_ord_skj_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_skj_2 <- pca_fort_skj_2 |>
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_skj_2
+
+#Lavisdalen
+
+pca_lav_2<- rda(sqrt(com_ord_lav_2018_2022[,-c(1:7, 86:88)]))
+pca_lav_2
+
+pca_fort_lav_2 <- fortify(pca_lav_2, display = "sites") |>
+  bind_cols(com_ord_lav_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_lav_2 <- pca_fort_lav_2 |>
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_lav_2
+
+#Gudmedalen
+
+pca_gud_2 <- rda(sqrt(com_ord_gud_2018_2022[,-c(1:7, 86:88)]))
+pca_gud_2
+
+pca_fort_gud_2 <- fortify(pca_gud_2, display = "sites") |>
+  bind_cols(com_ord_gud_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_gud_2 <- pca_fort_gud_2 |> 
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_gud_2
+
+#Ulvehaugen
+
+pca_ulv_2 <- rda(sqrt(com_ord_ulv_2018_2022[,-c(1:7, 86:88)]))
+
+pca_fort_ulv_2 <- fortify(pca_ulv_2, display = "sites") |>
+  bind_cols(com_ord_gud_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_ulv_2 <- pca_fort_ulv_2 |> 
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_ulv_2
+
+Ordination_plot_PCA_2 <- grid.arrange(Ord_plot_time_skj_2, Ord_plot_time_lav_2, Ord_plot_time_gud_2, Ord_plot_time_ulv_2, ncol = 2)
+
+ggsave(plot = Ordination_plot_PCA_2, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\four_plots_23_03_2.png", width = 10, height = 8, dpi = 300)
+
+#________2022________# #Funker ikke
+com_ord_skj_2022 <- com_ord_skj |>
+  filter(year == 2022)
+com_ord_lav_2022 <- com_ord_lav |>
+  filter(year == 2022)
+com_ord_gud_2022 <- com_ord_gud |>
+  filter(year == 2022)
+com_ord_ulv_2022 <- com_ord_ulv |>
+  filter(year == 2022)
+
+#Making a CCA for each location
+pca_skj_2022 <- rda(sqrt(com_ord_skj_2022[, -c(1:7, 86:88)]))
+pca_skj_2022
+
+pca_fort_skj_2022 <- fortify(pca_skj_2022, display = "sites") |>
+  bind_cols(com_ord_skj_2022[c(1:7, 86:88)])
+
+Ord_plot_time_skj_2022 <- pca_fort_skj_2022 |>
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_skj_2022
+
+#Lavisdalen
+
+pca_lav_2<- rda(sqrt(com_ord_lav_2018_2022[,-c(1:7, 86:88)]))
+pca_lav_2
+
+pca_fort_lav_2 <- fortify(pca_lav_2, display = "sites") |>
+  bind_cols(com_ord_lav_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_lav_2 <- pca_fort_lav_2 |>
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_lav_2
+
+#Gudmedalen
+
+pca_gud_2 <- rda(sqrt(com_ord_gud_2018_2022[,-c(1:7, 86:88)]))
+pca_gud_2
+
+pca_fort_gud_2 <- fortify(pca_gud_2, display = "sites") |>
+  bind_cols(com_ord_gud_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_gud_2 <- pca_fort_gud_2 |> 
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_gud_2
+
+#Ulvehaugen
+
+pca_ulv_2 <- rda(sqrt(com_ord_ulv_2018_2022[,-c(1:7, 86:88)]))
+
+pca_fort_ulv_2 <- fortify(pca_ulv_2, display = "sites") |>
+  bind_cols(com_ord_gud_2018_2022[c(1:7, 86:88)])
+
+Ord_plot_time_ulv_2 <- pca_fort_ulv_2 |> 
+  ggplot(aes(x = PC1, y = PC2, colour = treat, group = plotID)) +
+  geom_path() + #use geom_path not geom_line
+  geom_point(aes(size = if_else(year == 2018, 5, NA_real_)), show.legend = FALSE) +
+  #scale_color_viridis_d() +
+  scale_color_manual(values = Treatment_palette) +
+  scale_size(range = 2) +
+  coord_equal() +
+  theme_minimal(base_size = 14) +
+  theme(legend.text=element_text(size=14), legend.title = element_text(size = 14), plot.title = element_text(hjust = 0.1)) 
+
+Ord_plot_time_ulv_2
+
+Ordination_plot_PCA_2 <- grid.arrange(Ord_plot_time_skj_2, Ord_plot_time_lav_2, Ord_plot_time_gud_2, Ord_plot_time_ulv_2, ncol = 2)
+
+ggsave(plot = Ordination_plot_PCA_2, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\four_plots_23_03_2.png", width = 10, height = 8, dpi = 300)
 
 
 #\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\///////////////////////////////////////#
