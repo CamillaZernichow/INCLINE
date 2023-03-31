@@ -148,10 +148,10 @@ dev.off()
 cold_warm_palette <- c("Cold" = "#377eb8", "Warm" =  "#e41a1c")
 
 #__________Richness from 2018 to 2022____________#
-mod_richness_boxplot_2018_to_2022 <- species_richness |>
+mod_richness_boxblot_2018_2022 <- species_richness |>
   ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot() + 
-  facet_grid(year ~ as.factor(precip)) +
+  geom_boxplot(fill = "#EFEFEF") +
+  facet_grid(year ~ as.factor(precip)) + 
   theme_bw() +
   geom_jitter(aes(color = warming)) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
@@ -160,16 +160,17 @@ mod_richness_boxplot_2018_to_2022 <- species_richness |>
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
 
-mod_richness_boxplot_2018_to_2022
+mod_richness_boxblot_2018_2022
+
 
 ggsave(plot = mod_richness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
 
 
 #_________Richness 2018 and 2022__________#
-mod_richness_boxplot_2018_2022 <- species_richness |>
+mod_richness_boxplot_2018_and_2022 <- species_richness |>
   filter(year == c(2018,2022))|>
   ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot() + 
+  geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
@@ -188,7 +189,7 @@ ggsave(plot = mod_richness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Docum
 mod_richness_boxplot_2022 <- species_richness |>
   filter(year == 2022)|>
   ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot() + 
+  geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
@@ -260,6 +261,8 @@ richmod_trans_and_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming
 richmod_trans_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + transplant + (1|site), data = species_richness, family = poisson)
 richmod_trans_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * transplant + (1|site), data = species_richness, family = poisson)
 richmod_trans_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * transplant + warming + (1|site), data = species_richness, family = poisson)
+
 
 anova(richmod_warm_and_precip, richmod_trans_and_warm_and_precip)
 anova(richmod_warm_and_precip, richmod_trans_warm_over_precip)
@@ -269,6 +272,8 @@ anova(richmod_trans_and_warm_and_precip, richmod_trans_over_warm_adding_precip)
 anova(richmod_trans_and_warm_and_precip, richmod_trans_warm_over_precip)
 anova(richmod_trans_over_warm_adding_precip, richmod_trans_over_warm_over_precip)
 anova(richmod_trans_warm_over_precip, richmod_trans_over_warm_over_precip)
+anova(richmod_trans_and_warm_and_precip, richmod_trans_over_precip_adding_warm)
+anova(richmod_trans_and_warm_and_precip, richmod_trans_over_warm_over_precip)
 
 #_________Testing precip up against treatment_________#
 
@@ -295,6 +300,8 @@ richmod_treat_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + t
 richmod_treat_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + treatment + (1|site), data = species_richness, family = poisson)
 richmod_treat_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * treatment + (1|site), data = species_richness, family = poisson)
 richmod_treat_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * treatment + warming + (1|site), data = species_richness, family = poisson)
+richmod_treat_over_precip_over_warm <-  glmmTMB(richness ~ precip_scaled * treatment * warming + (1|site), data = species_richness, family = poisson)
 
 anova(richmod_warm_and_precip, richmod_treat_warm_and_precip)
 anova(richmod_warm_and_precip, richmod_treat_warm_over_precip)
@@ -304,6 +311,8 @@ anova(richmod_treat_warm_and_precip, richmod_treat_over_warm_adding_precip)
 anova(richmod_treat_warm_and_precip, richmod_treat_warm_over_precip)
 anova(richmod_treat_over_warm_adding_precip, richmod_treat_over_warm_over_precip)
 anova(richmod_treat_warm_over_precip, richmod_treat_over_warm_over_precip)
+anova(richmod_treat_warm_and_precip, richmod_treat_over_precip_adding_warm)
+anova(richmod_treat_warm_and_precip, richmod_treat_over_precip_over_warm)
 
 ################################################################################
 ####           Making community data ready for evenness, ordination and PRC           #### 
@@ -378,7 +387,7 @@ species_evenness$precip_scaled <- scale(species_evenness$precip)
 #__________Evenness from 2018 to 2022____________#
 mod_evenness_boxplot_2018_to_2022 <- species_evenness |>
   ggplot(aes(x = treatment, y = evenness)) +
-  geom_boxplot() + 
+  geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
@@ -397,7 +406,7 @@ ggsave(plot = mod_evenness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Do
 mod_evenness_boxplot_2018_2022 <- species_evenness |>
   filter(year == c(2018,2022))|>
   ggplot(aes(x = treatment, y = evenness)) +
-  geom_boxplot() + 
+  geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
@@ -416,7 +425,7 @@ ggsave(plot = mod_evenness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Docum
 mod_evenness_boxplot_2022 <- species_evenness |>
   filter(year == 2022)|>
   ggplot(aes(x = treatment, y = evenness)) +
-  geom_boxplot() + 
+  geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
@@ -425,6 +434,7 @@ mod_evenness_boxplot_2022 <- species_evenness |>
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
+
 
 mod_evenness_boxplot_2022
 
@@ -481,6 +491,7 @@ evenmod_trans_warm_and_precip <- glmmTMB(evenness ~ precip_scaled + warming + tr
 evenmod_trans_warm_over_precip <-  glmmTMB(evenness ~ precip_scaled * warming + transplant + (1|site), family = beta_family(link = "logit"),data = species_evenness)
 evenmod_trans_over_warm_adding_precip <-  glmmTMB(evenness ~ precip_scaled + warming * transplant + (1|site), family = beta_family(link = "logit"), data = species_evenness)
 evenmod_trans_over_warm_over_precip <-  glmmTMB(evenness ~ precip_scaled * warming * transplant + (1|site), family = beta_family(link = "logit"), data = species_evenness)
+evenmod_trans_over_precip_adding_warm <-  glmmTMB(evenness ~ precip_scaled * transplant + warming + (1|site), family = beta_family(link = "logit"), data = species_evenness)
 
 anova(evenmod_warm_and_precip, evenmod_trans_warm_and_precip)
 anova(evenmod_warm_and_precip, evenmod_trans_over_warm_adding_precip)
@@ -491,6 +502,8 @@ anova(evenmod_trans_warm_and_precip, evenmod_trans_warm_over_precip)
 anova(evenmod_trans_warm_and_precip, evenmod_trans_over_warm_adding_precip)
 anova(evenmod_trans_warm_over_precip, evenmod_trans_over_warm_over_precip)
 anova(evenmod_trans_over_warm_adding_precip, evenmod_trans_over_warm_over_precip)
+anova(evenmod_trans_warm_and_precip, evenmod_trans_over_warm_adding_precip)
+anova(evenmod_trans_warm_and_precip, evenmod_trans_over_warm_over_precip)
 
 #__________Testing precip up against treatment___________#
 evenmod_treat_and_precip <-  glmmTMB(evenness ~ precip_scaled + treatment + (1|site), family = beta_family(link = "logit"), data = species_evenness)
@@ -516,6 +529,8 @@ evenmod_treat_over_warm_adding_precip <-  glmmTMB(evenness ~ precip_scaled + war
 evenmod_treat_over_warm_over_precip <-  glmmTMB(evenness ~ precip_scaled * warming * treatment + (1|site), family = beta_family(link = "logit"), data = species_evenness)
 evenmod_treat_times_precip_adding_warm <-  glmmTMB(evenness ~ precip_scaled * treatment + warming + (1|site), family = beta_family(link = "logit"), data = species_evenness)
 
+evenmod_optimal<- glmmTMB(evenness ~ precip_scaled + warming + treatment + warming*treatment + (1|site), family = beta_family(link = "logit"), data = species_evenness)
+
 anova(evenmod_warm_and_precip, evenmod_treat_warm_and_precip)
 anova(evenmod_warm_and_precip, evenmod_treat_over_warm_adding_precip)
 anova(evenmod_warm_and_precip, evenmod_treat_warm_over_precip)
@@ -525,6 +540,7 @@ anova(evenmod_treat_warm_and_precip, evenmod_treat_over_warm_adding_precip)
 anova(evenmod_treat_warm_and_precip, evenmod_treat_warm_over_precip)
 anova(evenmod_treat_over_warm_adding_precip, evenmod_treat_over_warm_over_precip)
 anova(evenmod_treat_warm_over_precip, evenmod_treat_over_warm_over_precip)
+anova(evenmod_treat_warm_and_precip, evenmod_treat_over_warm_adding_precip)
 
 anova(evenmod_treat_warm_and_precip,evenmod_treat_times_precip_adding_warm)
 anova(evenmod_treat_warm_and_precip, evenmod_treat_over_warm_over_precip)
