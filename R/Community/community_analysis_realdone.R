@@ -148,7 +148,7 @@ dev.off()
 cold_warm_palette <- c("Cold" = "#377eb8", "Warm" =  "#e41a1c")
 
 #__________Richness from 2018 to 2022____________#
-mod_richness_boxblot_2018_2022 <- species_richness |>
+mod_richness_boxplot_2018_2022 <- species_richness |>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) + 
@@ -160,15 +160,15 @@ mod_richness_boxblot_2018_2022 <- species_richness |>
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
 
-mod_richness_boxblot_2018_2022
+mod_richness_boxplot_2018_2022
 
 
-ggsave(plot = mod_richness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
+ggsave(plot = mod_richness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
 
 
 #_________Richness 2018 and 2022__________#
 mod_richness_boxplot_2018_and_2022 <- species_richness |>
-  filter(year == c(2018,2022))|>
+  filter(year %in% c(2018,2022))|>
   ggplot(aes(x = treatment, y = richness)) +
   geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
@@ -180,9 +180,9 @@ mod_richness_boxplot_2018_and_2022 <- species_richness |>
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
 
-mod_richness_boxplot_2018_2022
+mod_richness_boxplot_2018_and_2022
 
-ggsave(plot = mod_richness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_2022.png", width = 8, height = 10, dpi = 300)
+ggsave(plot = mod_richness_boxplot_2018_and_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_and_2022.png", width = 8, height = 10, dpi = 300)
 
 #__________Richness 2022___________#
 
@@ -204,6 +204,24 @@ mod_richness_boxplot_2022
 
 ggsave(plot = mod_richness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2022.png", width = 8, height = 10, dpi = 300)
 
+#__________Richness 2022___________#
+
+mod_richness_boxplot_2018 <- species_richness |>
+  filter(year == 2018)|>
+  ggplot(aes(x = treatment, y = richness)) +
+  geom_boxplot(fill = "#EFEFEF") +
+  facet_grid(year ~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming)) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
+
+mod_richness_boxplot_2018
+
+ggsave(plot = mod_richness_boxplot_2018, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018.png", width = 8, height = 10, dpi = 300)
 
 #######__________________________Richness models__________________________#######
 species_richness$precip_scaled <- scale(species_richness$precip)
@@ -376,7 +394,7 @@ species_evenness_2018_2022 <- species_evenness|>
   group_by(site,year,treat)|>
   mutate(treat_evenness = mean(evenness))|>
   ungroup()|>
-  filter(year == c(2018, 2022))
+  filter(year %in% c(2018, 2022))
 #Is treat_evenness necessary?
 
 #Standardise the precip variable
@@ -404,7 +422,7 @@ ggsave(plot = mod_evenness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Do
 
 #_________evenness 2018 and 2022__________#
 mod_evenness_boxplot_2018_2022 <- species_evenness |>
-  filter(year == c(2018,2022))|>
+  filter(year %in% c(2018,2022))|>
   ggplot(aes(x = treatment, y = evenness)) +
   geom_boxplot(fill = "#EFEFEF") +
   facet_grid(year ~ as.factor(precip)) +
