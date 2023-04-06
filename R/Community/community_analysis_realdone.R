@@ -147,25 +147,6 @@ dev.off()
 
 cold_warm_palette <- c("Cold" = "#377eb8", "Warm" =  "#e41a1c")
 
-#__________Richness from 2018 to 2022____________#
-mod_richness_boxplot_2018_2022 <- species_richness |>
-  ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot(fill = "#EFEFEF") +
-  facet_grid(year ~ as.factor(precip)) + 
-  theme_bw() +
-  geom_jitter(aes(color = warming)) +
-  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
-  labs(x = "Treatment", y = "Species richness") +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14),
-        strip.text = element_text(size = 12))
-
-mod_richness_boxplot_2018_2022
-
-
-ggsave(plot = mod_richness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
-
-
 #_________Richness 2018 and 2022__________#
 mod_richness_boxplot_2018_and_2022 <- species_richness |>
   filter(year %in% c(2018,2022))|>
@@ -174,6 +155,7 @@ mod_richness_boxplot_2018_and_2022 <- species_richness |>
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species richness") +
   theme(axis.text = element_text(size = 12),
@@ -182,63 +164,109 @@ mod_richness_boxplot_2018_and_2022 <- species_richness |>
 
 mod_richness_boxplot_2018_and_2022
 
-ggsave(plot = mod_richness_boxplot_2018_and_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018_and_2022.png", width = 8, height = 10, dpi = 300)
-
-#__________Richness 2022___________#
-
-mod_richness_boxplot_2022 <- species_richness |>
-  filter(year == 2022)|>
+mod_richness_boxplot_2018_and_2022_test <- species_richness |>
+  filter(year %in% c(2018,2022))|>
   ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot(fill = "#EFEFEF") +
-  facet_grid(year ~ as.factor(precip)) +
+  geom_boxplot(aes(fill = as.factor(year))) +
+  facet_wrap( ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species richness") +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
 
-mod_richness_boxplot_2022
+mod_richness_boxplot_2018_and_2022_test
 
-
-ggsave(plot = mod_richness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2022.png", width = 8, height = 10, dpi = 300)
-
-#__________Richness 2022___________#
-
-mod_richness_boxplot_2018 <- species_richness |>
-  filter(year == 2018)|>
+mod_richness_boxplot_2018_and_2022_test_2 <- species_richness |>
+  filter(year %in% c(2018,2022))|>
   ggplot(aes(x = treatment, y = richness)) +
-  geom_boxplot(fill = "#EFEFEF") +
-  facet_grid(year ~ as.factor(precip)) +
+  geom_boxplot(aes(fill = as.factor(year))) +
+  facet_grid(warming ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species richness") +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14),
         strip.text = element_text(size = 12))
 
-mod_richness_boxplot_2018
+mod_richness_boxplot_2018_and_2022_test_2
 
-ggsave(plot = mod_richness_boxplot_2018, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richnessboxplot_2018.png", width = 8, height = 10, dpi = 300)
+
+ggsave(plot = mod_richness_boxplot_2018_and_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richness_boxplot_2018_and_2022.png", width = 9.5, height = 10, dpi = 300)
+
+ggsave(plot = mod_richness_boxplot_2018_and_2022_test, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richness_boxplot_2018_and_2022_test.png", width = 9.5, height = 10, dpi = 300)
+
+ggsave(plot = mod_richness_boxplot_2018_and_2022_test_2, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richness_boxplot_2018_and_2022_test_2.png", width = 9.5, height = 10, dpi = 300)
+
+
+#_________Richness 2018 and 2022 difference__________#
+#Making a new dataframe with all the variables that is needed. It makes a new column with richness from 2022 minus richness from 2018
+cold_warm_palette_dots <- c("Cold" = "#66A9FF", "Warm" =  "#FF6666")
+
+species_richness_2022_2018_test <- species_richness_2022_2018|>
+  group_by(plotID, warming, treatment, treat, precip)|>
+  summarise(diff_rich = richness[year == 2022] - richness[year == 2018])
+  
+  
+mod_richness_boxplot_2018_and_2022_diff <- species_richness_2022_2018_test |>
+  ggplot(aes(x = treatment, y = diff_rich)) +
+  geom_boxplot(aes(fill=warming))+ #fill = "#EFEFEF") +
+  facet_wrap( ~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
+  scale_color_manual(values = cold_warm_palette_dots, breaks = c("Cold", "Warm")) +
+  scale_fill_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
+
+mod_richness_boxplot_2018_and_2022_diff
+
+ggsave(plot = mod_richness_boxplot_2018_and_2022_diff_2, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richness_boxplot_2018_and_2022_diff.png", width = 9.5, height = 10, dpi = 300)
+
+mod_richness_boxplot_2018_and_2022_diff_2 <- species_richness_2022_2018_test |>
+  ggplot(aes(x = treatment, y = diff_rich)) +
+  geom_boxplot(fill = "#EFEFEF") +
+  facet_wrap( ~ as.factor(precip)) +
+  theme_bw() +
+  geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
+  scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  scale_fill_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
+  labs(x = "Treatment", y = "Species richness") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        strip.text = element_text(size = 12))
+
+mod_richness_boxplot_2018_and_2022_diff_2
+
+ggsave(plot = mod_richness_boxplot_2018_and_2022_diff_2, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\Richness_boxplot_2018_and_2022_diff_2.png", width = 9.5, height = 10, dpi = 300)
 
 #######__________________________Richness models__________________________#######
-species_richness$precip_scaled <- scale(species_richness$precip)
+species_richness_2022_2018 <- species_richness |>
+  filter(year %in% c(2018,2022))
+species_richness_2022_2018$precip_scaled <- scale(species_richness_2022_2018$precip)
 
 #Starting with making a null model so we can test the predictors alone
 
-null_richness <- glmmTMB(richness ~ 1 + (1|site), data = species_richness, family = poisson)
+null_richness <- glmmTMB(richness ~ 1 + (1|site), data = species_richness_2022_2018, family = poisson)
 
-richmod_precip <-  glmmTMB(richness ~ precip_scaled + (1|site), data = species_richness, family = poisson)
+richmod_precip <-  glmmTMB(richness ~ precip_scaled + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(null_richness, richmod_precip)
 
 #Also checking warming, site, transplant and treatment separated as well
-richmod_warm <- glmmTMB(richness ~ warming + (1|site), data = species_richness, family = poisson)
-richmod_site <- glmmTMB(richness ~ site + (1|site), data = species_richness, family = poisson) #Do not think this is right, however its easy to remove if neccesary
-richmod_trans <- glmmTMB(richness ~ transplant + (1|site), data = species_richness, family = poisson)
-richmod_treat <- glmmTMB(richness ~ treatment + (1|site), data = species_richness, family = poisson)
+richmod_warm <- glmmTMB(richness ~ warming + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_site <- glmmTMB(richness ~ site + (1|site), data = species_richness_2022_2018, family = poisson) #Do not think this is right, however its easy to remove if neccesary
+richmod_trans <- glmmTMB(richness ~ transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat <- glmmTMB(richness ~ treatment + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(null_richness, richmod_warm)
 anova(null_richness, richmod_site)
@@ -247,8 +275,8 @@ anova(null_richness, richmod_treat)
 
 #__________Testing precip up against warming__________#
 
-richmod_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + (1|site), data = species_richness, family = poisson)
-richmod_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + (1|site), data = species_richness, family = poisson)
+richmod_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_precip, richmod_warm_and_precip)
 anova(richmod_precip, richmod_warm_over_precip)
@@ -256,8 +284,8 @@ anova(richmod_warm_and_precip, richmod_warm_over_precip)
 
 #_________Testing precip up against transplant_________#
 
-richmod_trans_and_precip <-  glmmTMB(richness ~ precip_scaled + transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_over_precip <-  glmmTMB(richness ~ precip_scaled * transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_and_precip <-  glmmTMB(richness ~ precip_scaled + transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_over_precip <-  glmmTMB(richness ~ precip_scaled * transplant + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_precip, richmod_trans_and_precip)
 anova(richmod_precip, richmod_trans_over_precip)
@@ -265,8 +293,8 @@ anova(richmod_trans_and_precip, richmod_trans_over_precip)
 
 #_________Testing transplant up against warming_________#
 
-richmod_trans_and_warm <-  glmmTMB(richness ~ warming + transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_over_warm <-  glmmTMB(richness ~ warming * transplant + (1|site), data = species_richness, family = poisson)
+richmod_trans_and_warm <-  glmmTMB(richness ~ warming + transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_over_warm <-  glmmTMB(richness ~ warming * transplant + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_warm, richmod_trans_and_warm)
 anova(richmod_warm, richmod_trans_over_warm)
@@ -275,11 +303,11 @@ anova(richmod_trans_and_warm, richmod_trans_over_warm)
 #_________Adding transplant__________#
 
 #Making models adding transplant
-richmod_trans_and_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * transplant + (1|site), data = species_richness, family = poisson)
-richmod_trans_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * transplant + warming + (1|site), data = species_richness, family = poisson)
+richmod_trans_and_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * transplant + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_trans_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * transplant + warming + (1|site), data = species_richness_2022_2018, family = poisson)
 
 
 anova(richmod_warm_and_precip, richmod_trans_and_warm_and_precip)
@@ -295,8 +323,8 @@ anova(richmod_trans_and_warm_and_precip, richmod_trans_over_warm_over_precip)
 
 #_________Testing precip up against treatment_________#
 
-richmod_treat_and_precip <-  glmmTMB(richness ~ precip_scaled + treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_precip <-  glmmTMB(richness ~ precip_scaled * treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_and_precip <-  glmmTMB(richness ~ precip_scaled + treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_precip <-  glmmTMB(richness ~ precip_scaled * treatment + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_precip, richmod_treat_and_precip)
 anova(richmod_precip, richmod_treat_over_precip)
@@ -304,8 +332,8 @@ anova(richmod_treat_and_precip, richmod_treat_over_precip)
 
 #_________Testing treatment up against warming_________#
 
-richmod_treat_and_warm <-  glmmTMB(richness ~ warming + treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_warm <-  glmmTMB(richness ~ warming * treatment + (1|site), data = species_richness, family = poisson)
+richmod_treat_and_warm <-  glmmTMB(richness ~ warming + treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_warm <-  glmmTMB(richness ~ warming * treatment + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_warm, richmod_treat_and_warm)
 anova(richmod_warm, richmod_treat_over_warm)
@@ -314,12 +342,12 @@ anova(richmod_treat_and_warm, richmod_treat_over_warm)
 #__________Adding treatment__________#
 
 #Making models adding treatment
-richmod_treat_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * treatment + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * treatment + warming + (1|site), data = species_richness, family = poisson)
-richmod_treat_over_precip_over_warm <-  glmmTMB(richness ~ precip_scaled * treatment * warming + (1|site), data = species_richness, family = poisson)
+richmod_treat_warm_and_precip <-  glmmTMB(richness ~ precip_scaled + warming + treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming + treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_warm_adding_precip <-  glmmTMB(richness ~ precip_scaled + warming * treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_warm_over_precip <-  glmmTMB(richness ~ precip_scaled * warming * treatment + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_precip_adding_warm <-  glmmTMB(richness ~ precip_scaled * treatment + warming + (1|site), data = species_richness_2022_2018, family = poisson)
+richmod_treat_over_precip_over_warm <-  glmmTMB(richness ~ precip_scaled * treatment * warming + (1|site), data = species_richness_2022_2018, family = poisson)
 
 anova(richmod_warm_and_precip, richmod_treat_warm_and_precip)
 anova(richmod_warm_and_precip, richmod_treat_warm_over_precip)
@@ -409,6 +437,7 @@ mod_evenness_boxplot_2018_to_2022 <- species_evenness |>
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species evenness") +
   theme(axis.text = element_text(size = 12),
@@ -417,7 +446,7 @@ mod_evenness_boxplot_2018_to_2022 <- species_evenness |>
 
 mod_evenness_boxplot_2018_to_2022
 
-ggsave(plot = mod_evenness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2018_to_2022.png", width = 8, height = 10, dpi = 300)
+ggsave(plot = mod_evenness_boxplot_2018_to_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2018_to_2022.png", width = 9.5, height = 10, dpi = 300)
 
 
 #_________evenness 2018 and 2022__________#
@@ -428,6 +457,7 @@ mod_evenness_boxplot_2018_2022 <- species_evenness |>
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species evenness") +
   theme(axis.text = element_text(size = 12),
@@ -436,7 +466,7 @@ mod_evenness_boxplot_2018_2022 <- species_evenness |>
 
 mod_evenness_boxplot_2018_2022
 
-ggsave(plot = mod_evenness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2018_2022.png", width = 8, height = 10, dpi = 300)
+ggsave(plot = mod_evenness_boxplot_2018_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evenness_boxplot_2018_2022.png", width = 9.5, height = 10, dpi = 300)
 
 #__________evenness 2022___________#
 
@@ -447,6 +477,7 @@ mod_evenness_boxplot_2022 <- species_evenness |>
   facet_grid(year ~ as.factor(precip)) +
   theme_bw() +
   geom_jitter(aes(color = warming)) +
+  theme(panel.grid = element_blank()) +
   scale_color_manual(values = cold_warm_palette, breaks = c("Cold", "Warm")) +
   labs(x = "Treatment", y = "Species evenness") +
   theme(axis.text = element_text(size = 12),
@@ -457,7 +488,7 @@ mod_evenness_boxplot_2022 <- species_evenness |>
 mod_evenness_boxplot_2022
 
 
-ggsave(plot = mod_evenness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evennessboxplot_2022.png", width = 8, height = 10, dpi = 300)
+ggsave(plot = mod_evenness_boxplot_2022, "C:\\Users\\cam-d\\OneDrive\\Documents\\UIB\\Master\\Master_oppgave\\R\\INCLINE\\evenness_boxplot_2022.png", width = 9.5, height = 10, dpi = 300)
 
 
 
